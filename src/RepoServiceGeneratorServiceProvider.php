@@ -21,8 +21,8 @@ class RepoServiceGeneratorServiceProvider extends ServiceProvider
 
             // publish stub files agar bisa diubah oleh user
             $this->publishes([
-                __DIR__.'/stubs' => base_path('stubs/repo-service-generator'),
-            ], 'repo-service-generator-stubs');
+                __DIR__.'/stubs' => base_path('stubs/scribes'),
+            ], 'scribes-stubs');
         }
     }
 }
