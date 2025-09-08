@@ -1,0 +1,37 @@
+{
+    "name": "whydsee/laravel-scribes",
+    "description": "Laravel package untuk generate repository & service otomatis dari table schema",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Wahyudi",
+            "email": "whydandrian@gmail.com"
+        }
+    ],
+    "repositories": [
+        {
+        "type": "vcs",
+        "url": "https://github.com/whydsee/laravel-repo-service-generator"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "whydsee/laravel-scribes": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Wahyudi\\RepoServiceGenerator\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Wahyudi\\RepoServiceGenerator\\RepoServiceGeneratorServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

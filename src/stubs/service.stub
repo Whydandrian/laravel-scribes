@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Services;
+
+use App\Repositories\{{ model }}Repository;
+
+class {{ model }}Service
+{
+    public function __construct(
+        private {{ model }}Repository $repository
+    ) {}
+
+    public function listAll()
+    {
+        return $this->repository->all();
+    }
+
+    public function store(array $data)
+    {
+        return $this->repository->create($data);
+    }
+
+    public function update(int $id, array $data)
+    {
+        return $this->repository->update($id, $data);
+    }
+
+    public function delete(int $id)
+    {
+        return $this->repository->delete($id);
+    }
+}

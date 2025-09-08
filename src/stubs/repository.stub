@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Models\{{ model }};
+
+class {{ model }}Repository
+{
+    public function all()
+    {
+        return {{ model }}::all();
+    }
+
+    public function find(int $id): ?{{ model }}
+    {
+        return {{ model }}::find($id);
+    }
+
+    public function create(array $data): {{ model }}
+    {
+        return {{ model }}::create($data);
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        $item = $this->find($id);
+        return $item ? $item->update($data) : false;
+    }
+
+    public function delete(int $id): bool
+    {
+        $item = $this->find($id);
+        return $item ? $item->delete() : false;
+    }
+}
