@@ -24,37 +24,59 @@ class MakeRepositoryServiceCommand extends Command
             return;
         }
 
-        $this->generateRepository($modelName);
+        $fillable = collect($columns)
+            ->pluck('Field')
+            ->reject(fn($col) => in_array($col, ['id', 'created_at', 'updated_at', 'deleted_at']))
+            ->map(fn($col) => "'{$col}'")
+            ->implode(', ');
+
+        $this->generateRepository($modelName, $fillable);
         $this->generateService($modelName);
 
         $this->info("✅ Repository & Service berhasil dibuat!");
     }
 
-    private function generateRepository(string $modelName): void
+    private function generateRepository(string $modelName, string $fillable): void
     {
         $stub = file_get_contents(__DIR__.'/../stubs/repository.stub');
-        $content = str_replace('{{ model }}', $modelName, $stub);
 
-        $path = app_path("Repositories/{$modelName}Repository.php");
-        if (!file_exists(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
+        $content = str_replace(
+            ['{{ namespace }}', '{{ model }}', '{{ fillable }}'],
+            ["App\\Repositories\\{$modelName}Repository", $modelName, $fillable],
+            $stub
+        );
+
+        // Buat folder khusus per model
+        $dir = app_path("Repositories/{$modelName}Repository");
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
         }
 
+        $path = "{$dir}/{$modelName}Repository.php";
         file_put_contents($path, $content);
+
         $this->line("📄 Repository created: {$path}");
     }
 
     private function generateService(string $modelName): void
     {
         $stub = file_get_contents(__DIR__.'/../stubs/service.stub');
-        $content = str_replace('{{ model }}', $modelName, $stub);
 
-        $path = app_path("Services/{$modelName}Service.php");
-        if (!file_exists(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
+        $content = str_replace(
+            ['{{ namespace }}', '{{ model }}'],
+            ["App\\Services\\{$modelName}Service", $modelName],
+            $stub
+        );
+
+        // Buat folder khusus per model
+        $dir = app_path("Services/{$modelName}Service");
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
         }
 
+        $path = "{$dir}/{$modelName}Service.php";
         file_put_contents($path, $content);
+
         $this->line("📄 Service created: {$path}");
     }
 }
