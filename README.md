@@ -7,13 +7,13 @@ Package ini digunakan untuk generate repository & service otomatis dari table sc
 1. Install package via composer
 
 ```bash
-composer require whydsee/laravel-repo-service-generator
+composer require whydsee/laravel-scribes
 ```
 
 2. Publish stub files
 
 ```bash
-php artisan vendor:publish --tag=repo-service-generator-stubs
+php artisan vendor:publish --tag=scribes-stubs
 ```
 
 ### Penggunaan
@@ -21,7 +21,7 @@ php artisan vendor:publish --tag=repo-service-generator-stubs
 1. Generate repository & service
 
 ```bash
-php artisan make:repo-service {table_name}
+php artisan make:scribes {table_name}
 ```
 
 ### Catatan
