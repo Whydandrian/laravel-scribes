@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class MakeRepositoryServiceCommand extends Command
 {
-    protected $signature = 'make:repo-service {table}';
+    protected $signature = 'make:scribes {table}';
     protected $description = 'Generate repository & service class based on table schema';
 
     public function handle(): void
