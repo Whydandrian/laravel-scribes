@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Support;
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+
+class FileNamingStrategies
+{
+    public static function default(UploadedFile $file, array $context = []): string
+    {
+        return time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+    }
+
+    public static function avatar(UploadedFile $file, array $context = []): string
+    {
+        $username = $context['username'] ?? 'user';
+        return 'avatar_' . $username . '_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
+    }
+
+    public static function file(UploadedFile $file, array $context = []): string
+    {
+        $file_upload = $context['file_upload'] ?? 'file_upload';
+        return 'document_' . $file_upload . '_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
+    }
+
+    public static function date(UploadedFile $file, array $context = []): string
+    {
+        return now()->format('Ymd_His') . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+    }
+
+    public static function slug(UploadedFile $file, array $context = []): string
+    {
+        $slug = Str::slug($context['title'] ?? 'file');
+        return $slug . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+    }
+}

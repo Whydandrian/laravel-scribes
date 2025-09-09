@@ -60,7 +60,7 @@ class MakeRepositoryServiceCommand extends Command
     // ------------------- File Upload Support -------------------
     private function generateFileUploadSupport(): void
     {
-        $this->info("📂 Generating file upload trait & config from stubs...");
+        $this->info("📂 Generating file upload trait, config, and naming strategies...");
 
         // --- Trait ---
         $traitStub = file_get_contents(__DIR__.'/../stubs/file-upload-trait.stub');
@@ -87,7 +87,30 @@ class MakeRepositoryServiceCommand extends Command
             $this->warn("⚠️ Config scribes.php sudah ada, skip.");
         }
 
+        // --- FileNamingStrategies ---
+        $this->generateFileNamingStrategies();
+
         $this->info("✅ File upload support berhasil digenerate!");
+    }
+
+    // ------------------- File Naming Strategies -------------------
+    private function generateFileNamingStrategies(): void
+    {
+        $this->info("📂 Generating FileNamingStrategies class...");
+
+        $supportDir = app_path("Support");
+        if (!file_exists($supportDir)) {
+            mkdir($supportDir, 0755, true);
+        }
+
+        $classPath = "{$supportDir}/FileNamingStrategies.php";
+        if (!file_exists($classPath)) {
+            $classStub = file_get_contents(__DIR__.'/../stubs/file-naming-strategies.stub');
+            file_put_contents($classPath, $classStub);
+            $this->line("📄 Created: {$classPath}");
+        } else {
+            $this->warn("⚠️ FileNamingStrategies.php sudah ada, skip.");
+        }
     }
 
 
