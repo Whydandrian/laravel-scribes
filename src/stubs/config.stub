@@ -1,0 +1,56 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Upload Paths
+    |--------------------------------------------------------------------------
+    */
+    'paths' => [
+        'private' => 'uploads/private',
+        'public'  => 'uploads/public',
+        'temp'    => 'uploads/temp',
+        'sharing' => 'uploads/sharing',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | File Naming Strategies
+    |--------------------------------------------------------------------------
+    | Bisa ditambah sesuai kebutuhan. Setiap strategy adalah Closure yang
+    | menerima UploadedFile $file dan array $context.
+    */
+    'file_naming' => [
+
+        // Default: timestamp + uniqid
+        'default' => function ($file, $context = []) {
+            return time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        },
+
+        // Avatar: username + tanggal
+        'avatar' => function ($file, $context = []) {
+            $username = $context['username'] ?? 'user';
+            return 'avatar_' . $username . '_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
+        },
+        
+        // File: file_upload + tanggal
+        'file' => function ($file, $context = []) {
+            $file_upload = $context['file_upload'] ?? 'file_upload';
+            return 'document_' . $file_upload . '_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
+        },
+
+        // Tanggal lengkap YYYYMMDD_His + random
+        'date' => function ($file, $context = []) {
+            return now()->format('Ymd_His') . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        },
+
+        // Custom: misalnya pakai slug dari judul
+        'slug' => function ($file, $context = []) {
+            $slug = \Illuminate\Support\Str::slug($context['title'] ?? 'file');
+            return $slug . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        },
+
+    ],
+
+];

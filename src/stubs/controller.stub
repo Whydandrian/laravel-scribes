@@ -1,0 +1,45 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\Controller;
+use App\Services\{{ model }}\{{ model }}Service;
+use App\Http\Requests\{{ model }}\Store{{ model }}Request;
+use App\Http\Requests\{{ model }}\Update{{ model }}Request;
+use Illuminate\Http\JsonResponse;
+
+class {{ model }}Controller extends Controller
+{
+    public function __construct(
+        protected {{ model }}Service $service
+    ) {}
+
+    public function index(): JsonResponse
+    {
+        return response()->json($this->service->all());
+    }
+
+    public function store(Store{{ model }}Request $request): JsonResponse
+    {
+        return response()->json($this->service->create($request->validated()));
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        return response()->json($this->service->find($id));
+    }
+
+    public function update(Update{{ model }}Request $request, int $id): JsonResponse
+    {
+        return response()->json([
+            'success' => $this->service->update($id, $request->validated()),
+        ]);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        return response()->json([
+            'success' => $this->service->delete($id),
+        ]);
+    }
+}
