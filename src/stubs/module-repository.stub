@@ -1,0 +1,163 @@
+<?php
+
+namespace {{namespace}};
+
+use App\Modules\{{moduleName}}\Models\{{modelName}};
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class {{modelName}}Repository
+{
+    protected $model;
+
+    public function __construct({{modelName}} $model)
+    {
+        $this->model = $model;
+    }
+
+    /**
+     * Get all records
+     */
+    public function getAll(): Collection
+    {
+        return $this->model->all();
+    }
+
+    /**
+     * Get records with pagination
+     */
+    public function paginate(int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->model->paginate($perPage);
+    }
+
+    /**
+     * Find record by ID
+     */
+    public function findById(int $id): ?{{modelName}}
+    {
+        return $this->model->find($id);
+    }
+
+    /**
+     * Find record by ID or fail
+     */
+    public function findByIdOrFail(int $id): {{modelName}}
+    {
+        return $this->model->findOrFail($id);
+    }
+
+    /**
+     * Create new record
+     */
+    public function create(array $data): {{modelName}}
+    {
+        return $this->model->create($data);
+    }
+
+    /**
+     * Update record
+     */
+    public function update({{modelName}} ${{modelNameLower}}, array $data): bool
+    {
+        return ${{modelNameLower}}->update($data);
+    }
+
+    /**
+     * Delete record
+     */
+    public function delete({{modelName}} ${{modelNameLower}}): bool
+    {
+        return ${{modelNameLower}}->delete();
+    }
+
+    /**
+     * Find records by specific column
+     */
+    public function findBy(string $column, $value): Collection
+    {
+        return $this->model->where($column, $value)->get();
+    }
+
+    /**
+     * Find first record by specific column
+     */
+    public function findFirstBy(string $column, $value): ?{{modelName}}
+    {
+        return $this->model->where($column, $value)->first();
+    }
+
+    /**
+     * Check if record exists
+     */
+    public function exists(int $id): bool
+    {
+        return $this->model->where('id', $id)->exists();
+    }
+
+    /**
+     * Count records
+     */
+    public function count(): int
+    {
+        return $this->model->count();
+    }
+
+    /**
+     * Search records
+     */
+    public function search(string $query, array $columns = []): Collection
+    {
+        if (empty($columns)) {
+            $columns = [{{fillable}}];
+        }
+
+        $search = $this->model->query();
+
+        foreach ($columns as $column) {
+            $search->orWhere($column, 'like', "%{$query}%");
+        }
+
+        return $search->get();
+    }
+
+    /**
+     * Get records with conditions
+     */
+    public function getWhere(array $conditions): Collection
+    {
+        return $this->model->where($conditions)->get();
+    }
+
+    /**
+     * Get latest records
+     */
+    public function latest(int $limit = 10): Collection
+    {
+        return $this->model->latest()->limit($limit)->get();
+    }
+
+    /**
+     * Bulk insert
+     */
+    public function bulkInsert(array $data): bool
+    {
+        return $this->model->insert($data);
+    }
+
+    /**
+     * Bulk update
+     */
+    public function bulkUpdate(array $conditions, array $data): int
+    {
+        return $this->model->where($conditions)->update($data);
+    }
+
+    /**
+     * Bulk delete
+     */
+    public function bulkDelete(array $conditions): int
+    {
+        return $this->model->where($conditions)->delete();
+    }
+}

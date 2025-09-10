@@ -1,0 +1,167 @@
+<?php
+
+namespace {{namespace}};
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class {{modelName}} extends Model
+{
+    use HasFactory;
+    // use SoftDeletes; // Uncomment if you want soft deletes
+
+    /**
+     * The table associated with the model.
+     */
+    protected $table = '{{tableName}}';
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    protected $fillable = [
+        {{fillable}}
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        // Add sensitive fields here
+        // 'password',
+        // 'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        // Add attribute casting here
+        // 'email_verified_at' => 'datetime',
+        // 'is_active' => 'boolean',
+    ];
+
+    /**
+     * The attributes that should be mutated to dates.
+     */
+    protected $dates = [
+        'created_at',
+        'updated_at',
+        // 'deleted_at', // If using SoftDeletes
+    ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Add model events here
+        // static::creating(function ($model) {
+        //     // Logic before creating
+        // });
+
+        // static::created(function ($model) {
+        //     // Logic after created
+        // });
+
+        // static::updating(function ($model) {
+        //     // Logic before updating
+        // });
+
+        // static::updated(function ($model) {
+        //     // Logic after updated
+        // });
+
+        // static::deleting(function ($model) {
+        //     // Logic before deleting
+        // });
+
+        // static::deleted(function ($model) {
+        //     // Logic after deleted
+        // });
+    }
+
+    // ===============================================
+    // RELATIONSHIPS
+    // ===============================================
+
+    // Add your relationships here
+    // Example:
+    // public function user()
+    // {
+    //     return $this->belongsTo(User::class);
+    // }
+
+    // public function items()
+    // {
+    //     return $this->hasMany(Item::class);
+    // }
+
+    // ===============================================
+    // SCOPES
+    // ===============================================
+
+    // Add your query scopes here
+    // Example:
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('is_active', true);
+    // }
+
+    // public function scopeByStatus($query, $status)
+    // {
+    //     return $query->where('status', $status);
+    // }
+
+    // ===============================================
+    // ACCESSORS & MUTATORS
+    // ===============================================
+
+    // Add your accessors and mutators here
+    // Example:
+    // public function getFullNameAttribute()
+    // {
+    //     return $this->first_name . ' ' . $this->last_name;
+    // }
+
+    // public function setEmailAttribute($value)
+    // {
+    //     $this->attributes['email'] = strtolower($value);
+    // }
+
+    // ===============================================
+    // HELPER METHODS
+    // ===============================================
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'id';
+    }
+
+    /**
+     * Convert the model to array for API responses.
+     */
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->id,
+            // Add other fields you want to expose in API
+            'created_at' => $this->created_at?->toDateTimeString(),
+            'updated_at' => $this->updated_at?->toDateTimeString(),
+        ];
+    }
+
+    /**
+     * Get model display name.
+     */
+    public function getDisplayName(): string
+    {
+        // Customize this based on your model
+        return $this->name ?? $this->title ?? "{{modelName}} #{$this->id}";
+    }
+}
