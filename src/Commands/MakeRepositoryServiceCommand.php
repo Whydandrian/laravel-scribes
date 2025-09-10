@@ -218,19 +218,24 @@ class MakeRepositoryServiceCommand extends Command
         return $nullable ? "nullable|$rule" : "required|$rule";
     }
 
-    private function makeNamespace(string $type, string $modelName, ?string $domain, ?string $module): string
+    private function makeNamespace(string $type, string $modelName, ?string $domain, ?string $module = null): string
     {
-        if ($module) {
-            // Jika module dipilih, semua file masuk namespace Modules
-            return "App\\Modules\\{$module}\\{$type}\\{$modelName}";
-        }
-
         if ($domain) {
-            // Jika domain dipilih tapi module tidak, masuk namespace Domains
             return "App\\Domains\\{$domain}\\{$type}\\{$modelName}";
         }
 
-        // Default namespace Laravel
+        if ($module) {
+            if ($type === 'Repositories' || $type === 'Services') {
+                return "App\\Modules\\{$module}\\{$type}";
+            }
+            if ($type === 'Controllers') {
+                return "App\\Modules\\{$module}\\Http\\Controllers";
+            }
+            if ($type === 'Requests') {
+                return "App\\Modules\\{$module}\\Http\\Requests\\{$modelName}";
+            }
+        }
+
         return "App\\{$type}\\{$modelName}";
     }
 
