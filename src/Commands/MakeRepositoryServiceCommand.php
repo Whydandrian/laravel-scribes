@@ -234,11 +234,29 @@ class MakeRepositoryServiceCommand extends Command
         return "App\\{$type}\\{$modelName}";
     }
 
-    private function makeDir(string $type, string $modelName, ?string $domain): string
+    private function makeDir(string $type, string $modelName, ?string $domain, ?string $module = null): string
     {
-        return $domain
-            ? app_path("Domains/{$domain}/{$type}/{$modelName}")
-            : app_path("{$type}/{$modelName}");
+        if ($domain) {
+            return app_path("Domains/{$domain}/{$type}/{$modelName}");
+        }
+
+        if ($module) {
+            // Untuk Repository, kumpulkan dalam 1 folder
+            if ($type === 'Repositories') {
+                return app_path("Modules/{$module}/{$type}");
+            }
+            if ($type === 'Services') {
+                return app_path("Modules/{$module}/{$type}");
+            }
+            if ($type === 'Controllers') {
+                return app_path("Modules/{$module}/Http/Controllers");
+            }
+            if ($type === 'Requests') {
+                return app_path("Modules/{$module}/Http/Requests/{$modelName}");
+            }
+        }
+
+        return app_path("{$type}/{$modelName}");
     }
 
     private function makeDirectoryAndFile(string $dir, string $filename, string $content): void
