@@ -21,67 +21,72 @@ class MakeRepositoryServiceCommand extends Command
                             {--api= : Generate API controller untuk resource tertentu}
                             ';
 
-    protected $description = 'Generate repository, service, controller, requests OR file upload utilities';
+    protected $description = 'Generate repository, service, controller, requests, API controller, atau file upload support.';
 
-    public function handle(): void
+    public function handle(): int
     {
+        $table     = $this->argument('table');
+        $module    = $this->option('module');
+        $domain    = $this->option('domain');
+        $modelName = $this->option('model') ?? ($table ? Str::studly(Str::singular($table)) : null);
+        $api       = $this->option('api');
+
+        // --- File upload support ---
         if ($this->option('file-upload')) {
             $this->generateFileUploadSupport();
-            return;
+            return Command::SUCCESS;
         }
 
-        $table = $this->argument('table');
-        $module = $this->option('module');
-        $modelName = $this->option('model') ?? ($table ? Str::studly(Str::singular($table)) : null);
+        // --- API Controller support ---
+        if ($api) {
+            $this->generateApiController($api, $module, $domain);
+            return Command::SUCCESS;
+        }
 
-        if (!$table && (!$module || !$modelName)) {
-            $this->error("❌ Anda harus memberikan table atau module & model, atau gunakan --file-upload option.");
-            return;
+        // --- Validasi umum ---
+        if (!$table) {
+            $this->error("❌ Anda harus memberikan {table}, atau gunakan --file-upload, atau gunakan --api.");
+            return Command::FAILURE;
         }
 
         $this->info("🔧 Generating files for: " . ($module ? "$module/$modelName" : $modelName));
 
-        $columns = $table ? DB::select("SHOW COLUMNS FROM {$table}") : [];
-        $fillable = $columns ? collect($columns)
+        // Ambil struktur table
+        $columns     = DB::select("SHOW COLUMNS FROM {$table}");
+        $fillable    = collect($columns)
             ->pluck('Field')
             ->reject(fn($col) => in_array($col, ['id', 'created_at', 'updated_at', 'deleted_at']))
             ->map(fn($col) => "'{$col}'")
-            ->implode(', ') : '';
-        $rulesStore = $columns ? $this->generateRules($columns, 'store') : '';
-        $rulesUpdate = $columns ? $this->generateRules($columns, 'update') : '';
+            ->implode(', ');
+        $rulesStore  = $this->generateRules($columns, 'store');
+        $rulesUpdate = $this->generateRules($columns, 'update');
 
-        // Pilihan granular
-        $onlyRepository  = $this->option('repository');
-        $onlyService     = $this->option('service');
-        $onlyController  = $this->option('controller');
-        $onlyRequest     = $this->option('request');
-        $apiResource     = $this->option('api');
+        // Opsi granular
+        $onlyRepository = $this->option('repository');
+        $onlyService    = $this->option('service');
+        $onlyController = $this->option('controller');
+        $onlyRequest    = $this->option('request');
 
-        if (!$onlyRepository && !$onlyService && !$onlyController && !$onlyRequest && !$apiResource) {
-            $onlyRepository = $onlyService = $onlyController = $onlyRequest = $apiResource = true;
+        if (!$onlyRepository && !$onlyService && !$onlyController && !$onlyRequest) {
+            $onlyRepository = $onlyService = $onlyController = $onlyRequest = true;
         }
 
         if ($onlyRepository) {
-            $this->generateRepository($modelName, $fillable, $this->option('domain'), $module);
+            $this->generateRepository($modelName, $fillable, $domain, $module);
         }
         if ($onlyService) {
-            $this->generateService($modelName, $this->option('domain'), $module);
+            $this->generateService($modelName, $domain, $module);
         }
         if ($onlyController) {
-            $this->generateController($modelName, $this->option('domain'), $module);
+            $this->generateController($modelName, $domain, $module);
         }
         if ($onlyRequest) {
-            $this->generateRequests($modelName, $rulesStore, $rulesUpdate, $this->option('domain'), $module);
-        }
-        if ($apiResource) {
-            $this->generateApiController(
-                $apiResource,
-                $module,
-                $this->option('domain')
-            );
+            $this->generateRequests($modelName, $rulesStore, $rulesUpdate, $domain, $module);
         }
 
         $this->info("✅ Files generated successfully in " . ($module ? "module: $module" : 'default structure'));
+
+        return Command::SUCCESS;
     }
 
     // ------------------- File Upload Support -------------------
@@ -92,11 +97,10 @@ class MakeRepositoryServiceCommand extends Command
         // --- Trait ---
         $traitStub = file_get_contents(__DIR__.'/../stubs/file-upload-trait.stub');
         $traitDir  = app_path("Traits");
-        if (!file_exists($traitDir)) {
-            mkdir($traitDir, 0755, true);
-        }
+        if (!is_dir($traitDir)) mkdir($traitDir, 0755, true);
+
         $traitPath = "{$traitDir}/FileUploadTrait.php";
-        if (!file_exists($traitPath)) {
+        if (!is_file($traitPath)) {
             file_put_contents($traitPath, $traitStub);
             $this->line("📄 Created: {$traitPath}");
         } else {
@@ -106,7 +110,7 @@ class MakeRepositoryServiceCommand extends Command
         // --- Config ---
         $configStub = file_get_contents(__DIR__.'/../stubs/config.stub');
         $configPath = config_path('scribes.php');
-        if (!file_exists($configPath)) {
+        if (!is_file($configPath)) {
             file_put_contents($configPath, $configStub);
             $this->line("📄 Created: {$configPath}");
         } else {
@@ -122,11 +126,10 @@ class MakeRepositoryServiceCommand extends Command
     private function generateFileNamingStrategies(): void
     {
         $supportDir = app_path("Support");
-        if (!file_exists($supportDir)) {
-            mkdir($supportDir, 0755, true);
-        }
+        if (!is_dir($supportDir)) mkdir($supportDir, 0755, true);
+
         $classPath = "{$supportDir}/FileNamingStrategies.php";
-        if (!file_exists($classPath)) {
+        if (!is_file($classPath)) {
             $classStub = file_get_contents(__DIR__.'/../stubs/file-naming-strategies.stub');
             file_put_contents($classPath, $classStub);
             $this->line("📄 Created: {$classPath}");
@@ -138,59 +141,79 @@ class MakeRepositoryServiceCommand extends Command
     // ------------------- Repository -------------------
     private function generateRepository(string $modelName, string $fillable, ?string $domain, ?string $module): void
     {
-        $namespace = $this->makeNamespace("Repositories", $modelName, $domain, $module);
-        $dir = $this->makeDir("Repositories", $modelName, $domain, $module);
+        $namespace = $this->makeNamespace("Repositories", $domain, $module);
+        $dir       = $this->makeDir("Repositories", $domain, $module);
+
         $stub = file_get_contents(__DIR__.'/../stubs/repository.stub');
-        $content = str_replace(['{{ namespace }}', '{{ model }}', '{{ fillable }}'], [$namespace, $modelName, $fillable], $stub);
+        $content = str_replace(
+            ['{{ namespace }}', '{{ model }}', '{{ fillable }}'],
+            [$namespace, $modelName, $fillable],
+            $stub
+        );
+
         $this->makeDirectoryAndFile($dir, "{$modelName}Repository.php", $content);
     }
 
     // ------------------- Service -------------------
     private function generateService(string $modelName, ?string $domain, ?string $module): void
     {
-        $namespace = $this->makeNamespace("Services", $modelName, $domain, $module);
-        $dir = $this->makeDir("Services", $modelName, $domain, $module);
+        $namespace = $this->makeNamespace("Services", $domain, $module);
+        $dir       = $this->makeDir("Services", $domain, $module);
+
         $stub = file_get_contents(__DIR__.'/../stubs/service.stub');
         $content = str_replace(['{{ namespace }}', '{{ model }}'], [$namespace, $modelName], $stub);
+
         $this->makeDirectoryAndFile($dir, "{$modelName}Service.php", $content);
     }
 
     // ------------------- Controller -------------------
     private function generateController(string $modelName, ?string $domain, ?string $module): void
     {
-        $namespace = $module
-            ? "App\\Modules\\{$module}\\Http\\Controllers"
-            : ($domain ? "App\\Domains\\{$domain}\\Http\\Controllers" : "App\\Http\\Controllers");
-
-        $dir = $module
-            ? app_path("Modules/{$module}/Http/Controllers")
-            : ($domain ? app_path("Domains/{$domain}/Http/Controllers") : app_path("Http/Controllers"));
+        $namespace = $this->makeNamespace("Http\\Controllers", $domain, $module);
+        $dir       = $this->makeDir("Http/Controllers", $domain, $module);
 
         $stub = file_get_contents(__DIR__.'/../stubs/controller.stub');
         $content = str_replace(['{{ namespace }}', '{{ model }}'], [$namespace, $modelName], $stub);
+
         $this->makeDirectoryAndFile($dir, "{$modelName}Controller.php", $content);
     }
 
     // ------------------- Requests -------------------
     private function generateRequests(string $modelName, string $rulesStore, string $rulesUpdate, ?string $domain, ?string $module): void
     {
-        $namespace = $module
-            ? "App\\Modules\\{$module}\\Http\\Requests\\{$modelName}"
-            : ($domain ? "App\\Domains\\{$domain}\\Http\\Requests\\{$modelName}" : "App\\Http\\Requests\\{$modelName}");
-
-        $dir = $module
-            ? app_path("Modules/{$module}/Http/Requests/{$modelName}")
-            : ($domain ? app_path("Domains/{$domain}/Http/Requests/{$modelName}") : app_path("Http/Requests/{$modelName}"));
+        $namespace = $this->makeNamespace("Http\\Requests\\{$modelName}", $domain, $module);
+        $dir       = $this->makeDir("Http/Requests/{$modelName}", $domain, $module);
 
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
             $stub = file_get_contents(__DIR__.'/../stubs/request.stub');
             $content = str_replace(
-                ['{{ namespace }}', '{{ model }}', '{{ type }}', '{{ rules }}'],
-                [$namespace, $modelName, $type, $rules],
+                ['{{ namespace }}', '{{ class }}', '{{ rules }}'],
+                [$namespace, "{$type}{$modelName}Request", $rules],
                 $stub
             );
             $this->makeDirectoryAndFile($dir, "{$type}{$modelName}Request.php", $content);
         }
+    }
+
+    // ------------------- API Controller -------------------
+    protected function generateApiController(string $name, ?string $module, ?string $domain): void
+    {
+        $namespace = $this->makeNamespace("Http\\Controllers\\Api", $domain, $module);
+        $dir       = $this->makeDir("Http/Controllers/Api", $domain, $module);
+
+        $stub = file_get_contents(__DIR__.'/../stubs/api-controller.stub');
+        $stub = str_replace(
+            ['{{namespace}}', '{{class}}', '{{baseController}}'],
+            [$namespace, "{$name}Controller", 'BaseApiController'],
+            $stub
+        );
+
+        $this->makeDirectoryAndFile($dir, "{$name}Controller.php", $stub);
+
+        $this->info("📄 API Controller created: {$dir}/{$name}Controller.php");
+
+        // Generate Store & Update Request
+        $this->generateRequests($name, '', '', $domain, $module);
     }
 
     // ------------------- Helpers -------------------
@@ -207,144 +230,36 @@ class MakeRepositoryServiceCommand extends Command
     private function mapColumnToRule(string $type, bool $nullable): string
     {
         $rule = match (true) {
-            str_contains($type, 'int') => 'integer',
+            str_contains($type, 'int')       => 'integer',
             str_contains($type, 'varchar'),
-            str_contains($type, 'text') => 'string',
+            str_contains($type, 'text')      => 'string',
             str_contains($type, 'date') && !str_contains($type, 'time') => 'date',
-            str_contains($type, 'datetime') => 'date_format:Y-m-d H:i:s',
-            str_contains($type, 'tinyint(1)') => 'boolean',
-            default => 'string',
+            str_contains($type, 'datetime')  => 'date_format:Y-m-d H:i:s',
+            str_contains($type, 'tinyint(1)')=> 'boolean',
+            default                          => 'string',
         };
         return $nullable ? "nullable|$rule" : "required|$rule";
     }
 
-    private function makeNamespace(string $type, string $modelName, ?string $domain, ?string $module = null): string
+    private function makeNamespace(string $type, ?string $domain, ?string $module): string
     {
-        if ($domain) {
-            return "App\\Domains\\{$domain}\\{$type}\\{$modelName}";
-        }
-
-        if ($module) {
-            if ($type === 'Repositories' || $type === 'Services') {
-                return "App\\Modules\\{$module}\\{$type}";
-            }
-            if ($type === 'Controllers') {
-                return "App\\Modules\\{$module}\\Http\\Controllers";
-            }
-            if ($type === 'Requests') {
-                return "App\\Modules\\{$module}\\Http\\Requests\\{$modelName}";
-            }
-        }
-
-        return "App\\{$type}\\{$modelName}";
+        if ($module) return "App\\Modules\\{$module}\\{$type}";
+        if ($domain) return "App\\Domains\\{$domain}\\{$type}";
+        return "App\\{$type}";
     }
 
-    private function makeDir(string $type, string $modelName, ?string $domain, ?string $module = null): string
+    private function makeDir(string $type, ?string $domain, ?string $module): string
     {
-        if ($domain) {
-            return app_path("Domains/{$domain}/{$type}/{$modelName}");
-        }
-
-        if ($module) {
-            // Untuk Repository, kumpulkan dalam 1 folder
-            if ($type === 'Repositories') {
-                return app_path("Modules/{$module}/{$type}");
-            }
-            if ($type === 'Services') {
-                return app_path("Modules/{$module}/{$type}");
-            }
-            if ($type === 'Controllers') {
-                return app_path("Modules/{$module}/Http/Controllers");
-            }
-            if ($type === 'Requests') {
-                return app_path("Modules/{$module}/Http/Requests/{$modelName}");
-            }
-        }
-
-        return app_path("{$type}/{$modelName}");
+        if ($module) return app_path("Modules/{$module}/{$type}");
+        if ($domain) return app_path("Domains/{$domain}/{$type}");
+        return app_path($type);
     }
 
     private function makeDirectoryAndFile(string $dir, string $filename, string $content): void
     {
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
         $path = "{$dir}/{$filename}";
         file_put_contents($path, $content);
-
         $this->line("📄 Created: {$path}");
     }
-
-    protected function generateApiController(string $name, ?string $module, ?string $domain)
-    {
-        // Tentukan namespace
-        if ($module) {
-            $namespace = "App\\Modules\\{$module}\\Http\\Controllers\\Api";
-            $dir = app_path("Modules/{$module}/Http/Controllers/Api");
-        } elseif ($domain) {
-            $namespace = "App\\Domains\\{$domain}\\Http\\Controllers\\Api";
-            $dir = app_path("Domains/{$domain}/Http/Controllers/Api");
-        } else {
-            $namespace = "App\\Http\\Controllers\\Api";
-            $dir = app_path("Http/Controllers/Api");
-        }
-
-        // Pastikan direktori ada
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        // Path file controller
-        $path = "{$dir}/{$name}Controller.php";
-
-        // Ambil stub
-        $stub = file_get_contents(__DIR__.'/../stubs/api-controller.stub');
-
-        // Replace variabel di stub
-        $stub = str_replace(
-            ['{{namespace}}', '{{class}}', '{{baseController}}'],
-            [$namespace, "{$name}Controller", 'BaseApiController'],
-            $stub
-        );
-
-        // Simpan file
-        file_put_contents($path, $stub);
-        $this->info("📄 API Controller created: {$path}");
-
-        // Generate Custom Requests (Store & Update)
-        $this->generateRequest($name, 'Store', $module, $domain, true);
-        $this->generateRequest($name, 'Update', $module, $domain, true);
-    }
-
-    protected function generateRequest(string $name, string $type, ?string $module, ?string $domain, bool $isApi = false)
-    {
-        if ($module) {
-            $namespace = "App\\Modules\\{$module}\\Http\\Requests\\{$name}";
-            $dir = app_path("Modules/{$module}/Http/Requests/{$name}");
-        } elseif ($domain) {
-            $namespace = "App\\Domains\\{$domain}\\Http\\Requests\\{$name}";
-            $dir = app_path("Domains/{$domain}/Http/Requests/{$name}");
-        } else {
-            $namespace = "App\\Http\\Requests\\{$name}";
-            $dir = app_path("Http/Requests/{$name}");
-        }
-
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $path = "{$dir}/{$type}{$name}Request.php";
-        $stub = file_get_contents(__DIR__.'/../stubs/request.stub');
-
-        $stub = str_replace(
-            ['{{namespace}}', '{{class}}'],
-            [$namespace, "{$type}{$name}Request"],
-            $stub
-        );
-
-        file_put_contents($path, $stub);
-        $this->info("📄 {$type} Request created: {$path}");
-    }
-
 }
