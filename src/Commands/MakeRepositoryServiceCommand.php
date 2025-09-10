@@ -278,25 +278,73 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function generateApiController(string $name, ?string $module, ?string $domain)
     {
-        $namespace = $this->makeNamespace('Controllers\\Api', $module, $domain);
-        $path = $this->makePath("Controllers/Api/{$name}Controller.php", $module, $domain);
+        // Tentukan namespace
+        if ($module) {
+            $namespace = "App\\Modules\\{$module}\\Http\\Controllers\\Api";
+            $dir = app_path("Modules/{$module}/Http/Controllers/Api");
+        } elseif ($domain) {
+            $namespace = "App\\Domains\\{$domain}\\Http\\Controllers\\Api";
+            $dir = app_path("Domains/{$domain}/Http/Controllers/Api");
+        } else {
+            $namespace = "App\\Http\\Controllers\\Api";
+            $dir = app_path("Http/Controllers/Api");
+        }
 
-        $stub = $this->files->get(__DIR__.'/stubs/api-controller.stub');
+        // Pastikan direktori ada
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
 
+        // Path file controller
+        $path = "{$dir}/{$name}Controller.php";
+
+        // Ambil stub
+        $stub = file_get_contents(__DIR__.'/../stubs/api-controller.stub');
+
+        // Replace variabel di stub
         $stub = str_replace(
             ['{{namespace}}', '{{class}}', '{{baseController}}'],
             [$namespace, "{$name}Controller", 'BaseApiController'],
             $stub
         );
 
-        $this->makeDirectory($path);
-        $this->files->put($path, $stub);
-
-        $this->info("API Controller created: {$path}");
+        // Simpan file
+        file_put_contents($path, $stub);
+        $this->info("📄 API Controller created: {$path}");
 
         // Generate Custom Requests (Store & Update)
-        $this->generateRequest($name, 'Store', $module, $domain);
-        $this->generateRequest($name, 'Update', $module, $domain);
+        $this->generateRequest($name, 'Store', $module, $domain, true);
+        $this->generateRequest($name, 'Update', $module, $domain, true);
+    }
+
+    protected function generateRequest(string $name, string $type, ?string $module, ?string $domain, bool $isApi = false)
+    {
+        if ($module) {
+            $namespace = "App\\Modules\\{$module}\\Http\\Requests\\{$name}";
+            $dir = app_path("Modules/{$module}/Http/Requests/{$name}");
+        } elseif ($domain) {
+            $namespace = "App\\Domains\\{$domain}\\Http\\Requests\\{$name}";
+            $dir = app_path("Domains/{$domain}/Http/Requests/{$name}");
+        } else {
+            $namespace = "App\\Http\\Requests\\{$name}";
+            $dir = app_path("Http/Requests/{$name}");
+        }
+
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $path = "{$dir}/{$type}{$name}Request.php";
+        $stub = file_get_contents(__DIR__.'/../stubs/request.stub');
+
+        $stub = str_replace(
+            ['{{namespace}}', '{{class}}'],
+            [$namespace, "{$type}{$name}Request"],
+            $stub
+        );
+
+        file_put_contents($path, $stub);
+        $this->info("📄 {$type} Request created: {$path}");
     }
 
 }
