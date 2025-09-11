@@ -13,15 +13,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Prefix route ini tidak boleh diganti. karena akan menyesuaikan ke module yang dibuat
 Route::prefix('{{moduleNameLower}}')->name('{{moduleNameLower}}.')->group(function () {
     
-    // Add your module routes here
-    // Example:
-    // Route::resource('users', 'UserController');
+    // Tambahkan route seperti biasanya
+    // Contoh:
+    // Route::get('/', function () {
+    //    return view('{{moduleNameLower}}::dashboard');
+    // })->name('dashboard');
     
     // Dashboard route
     Route::get('/', function () {
-        return view('{{moduleNameLower}}::dashboard');
+        return view('');
     })->name('dashboard');
 
     // Example resource routes (uncomment when you have controllers)

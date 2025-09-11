@@ -50,6 +50,9 @@ class MakeRepositoryServiceCommand extends Command
             $this->warn("💡 Tip: Gunakan --table=table1,table2 untuk langsung generate Repository, Service, dan Controller");
         }
 
+        // Auto-register service provider
+        $this->registerServiceProviderToComposer($this->moduleName);
+
         return Command::SUCCESS;
     }
 
@@ -59,9 +62,6 @@ class MakeRepositoryServiceCommand extends Command
         
         $directories = [
             'Config',
-            'Database/Migrations',
-            'Database/Factories', 
-            'Database/Seeders',
             'Http/Controllers',
             'Http/Requests',
             'Http/Middleware',
@@ -71,7 +71,7 @@ class MakeRepositoryServiceCommand extends Command
             'Services',
             'Repositories'
         ];
-
+    
         foreach ($directories as $dir) {
             $path = "{$basePath}/{$dir}";
             if (!is_dir($path)) {
@@ -79,7 +79,7 @@ class MakeRepositoryServiceCommand extends Command
                 $this->line("📁 Created directory: {$path}");
             }
         }
-
+    
         // Generate routes file
         $this->generateRoutesFile($basePath);
         
@@ -93,9 +93,9 @@ class MakeRepositoryServiceCommand extends Command
             $this->error("❌ Table '{$table}' tidak ditemukan di database");
             return;
         }
-
+    
         $this->info("🔄 Processing table: {$table}");
-
+    
         $modelName = Str::studly(Str::singular($table));
         $columns = DB::select("SHOW COLUMNS FROM {$table}");
         
@@ -110,10 +110,7 @@ class MakeRepositoryServiceCommand extends Command
         
         // Generate Requests
         $this->generateRequests($table, $modelName, $columns);
-        
-        // Generate Model jika belum ada
-        $this->generateModel($table, $modelName, $columns);
-
+    
         $this->line("✅ Files untuk table '{$table}' berhasil dibuat");
     }
 
@@ -196,9 +193,16 @@ class MakeRepositoryServiceCommand extends Command
     private function generateRequests(string $table, string $modelName, array $columns): void
     {
         $requestDir = app_path("Modules/{$this->moduleName}/Http/Requests");
+        $modelRequestDir = "{$requestDir}/{$modelName}Request";
         
+        // Buat direktori utama jika belum ada
         if (!is_dir($requestDir)) {
             mkdir($requestDir, 0755, true);
+        }
+        
+        // Buat direktori model request jika belum ada
+        if (!is_dir($modelRequestDir)) {
+            mkdir($modelRequestDir, 0755, true);
         }
         
         $rulesStore = $this->generateRules($columns, 'store');
@@ -213,14 +217,14 @@ class MakeRepositoryServiceCommand extends Command
                 '{{ modelName }}',
                 '{{ rules }}'
             ], [
-                "App\\Modules\\{$this->moduleName}\\Http\\Requests",
+                "App\\Modules\\{$this->moduleName}\\Http\\Requests\\{$modelName}Request",
                 $type,
                 $modelName,
                 $modelName,
                 $rules
             ], $stub);
     
-            $filePath = "{$requestDir}/{$type}{$modelName}Request.php";
+            $filePath = "{$modelRequestDir}/{$type}{$modelName}Request.php";
             file_put_contents($filePath, $content);
             $this->line("📄 Created: {$filePath}");
         }
@@ -387,5 +391,38 @@ class MakeRepositoryServiceCommand extends Command
     private function getServiceProviderStub(): string
     {
         return file_get_contents(__DIR__.'/../stubs/module-service-provider.stub');
+    }
+
+    private function registerServiceProviderToComposer(string $moduleName): void
+    {
+        $composerPath = base_path('composer.json');
+        $composer = json_decode(file_get_contents($composerPath), true);
+        
+        $providerClass = "App\\Modules\\{$moduleName}\\{$moduleName}ServiceProvider";
+        
+        // Inisialisasi struktur jika belum ada
+        if (!isset($composer['extra'])) {
+            $composer['extra'] = [];
+        }
+        if (!isset($composer['extra']['laravel'])) {
+            $composer['extra']['laravel'] = [];
+        }
+        if (!isset($composer['extra']['laravel']['providers'])) {
+            $composer['extra']['laravel']['providers'] = [];
+        }
+        
+        // Tambahkan provider jika belum ada
+        if (!in_array($providerClass, $composer['extra']['laravel']['providers'])) {
+            $composer['extra']['laravel']['providers'][] = $providerClass;
+            
+            // Tulis kembali ke composer.json
+            file_put_contents(
+                $composerPath, 
+                json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            );
+            
+            $this->line("📦 Added {$providerClass} to composer.json");
+            $this->line("💡 Run 'composer dump-autoload' to register the provider");
+        }
     }
 }

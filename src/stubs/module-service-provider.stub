@@ -15,8 +15,6 @@ class {{moduleName}}ServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->register(RouteServiceProvider::class);
-        
         // Register module config
         $this->mergeConfigFrom(
             __DIR__ . '/Config/config.php',
@@ -36,7 +34,16 @@ class {{moduleName}}ServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
-        $this->loadMigrationsFrom(__DIR__ . '/Database/Migrations');
+        $this->registerRoutes(); // <- TAMBAHKAN INI
+    }
+
+    /**
+     * Register routes.
+     */
+    protected function registerRoutes(): void
+    {
+        $this->loadRoutesFrom(__DIR__ . '/Routes/web.php');
+        $this->loadRoutesFrom(__DIR__ . '/Routes/api.php');
     }
 
     /**
