@@ -175,15 +175,11 @@ class MakeRepositoryServiceCommand extends Command
         
         $stub = $this->getControllerStub();
         $content = str_replace([
-            '{{namespace}}',
-            '{{moduleName}}',
-            '{{modelName}}',
-            '{{modelNameLower}}'
+            '{{ namespace }}',
+            '{{ model }}'
         ], [
             "App\\Modules\\{$this->moduleName}\\Http\\Controllers",
-            $this->moduleName,
-            $modelName,
-            Str::camel($modelName)
+            $modelName
         ], $stub);
 
         $filePath = "{$controllerDir}/{$modelName}Controller.php";
@@ -201,14 +197,14 @@ class MakeRepositoryServiceCommand extends Command
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
             $stub = $this->getRequestStub();
             $content = str_replace([
-                '{{namespace}}',
-                '{{moduleName}}',
-                '{{className}}',
-                '{{rules}}'
+                '{{ namespace }}',
+                '{{ type }}',
+                '{{ model }}',
+                '{{ rules }}'
             ], [
                 "App\\Modules\\{$this->moduleName}\\Http\\Requests",
-                $this->moduleName,
-                "{$type}{$modelName}Request",
+                $type,
+                $modelName,
                 $rules
             ], $stub);
 
@@ -343,22 +339,22 @@ class MakeRepositoryServiceCommand extends Command
     // Stub methods - implementasi stub akan dibuat terpisah
     private function getRepositoryStub(): string
     {
-        return file_get_contents(__DIR__.'/../stubs/module-repository.stub');
+        return file_get_contents(__DIR__.'/../stubs/repository.stub');
     }
 
     private function getServiceStub(): string
     {
-        return file_get_contents(__DIR__.'/../stubs/module-service.stub');
+        return file_get_contents(__DIR__.'/../stubs/service.stub');
     }
 
     private function getControllerStub(): string
     {
-        return file_get_contents(__DIR__.'/../stubs/module-controller.stub');
+        return file_get_contents(__DIR__.'/../stubs/controller.stub');
     }
 
     private function getRequestStub(): string
     {
-        return file_get_contents(__DIR__.'/../stubs/module-request.stub');
+        return file_get_contents(__DIR__.'/../stubs/request.stub');
     }
 
     private function getModelStub(): string
