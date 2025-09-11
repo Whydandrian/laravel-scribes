@@ -3,9 +3,9 @@
 namespace {{ namespace }};
 
 use App\Http\Controllers\Controller;
-use App\Modules\{{ moduleName }}\Services\{{ model }}Service\{{ model }}Service;
-use App\Modules\{{ moduleName }}\Http\Requests\{{ model }}Request\Store{{ model }}Request;
-use App\Modules\{{ moduleName }}\Http\Requests\{{ model }}Request\Update{{ model }}Request;
+use App\Modules\{{ modelName }}\Services\{{ model }}Service\{{ model }}Service;
+use App\Modules\{{ modelName }}\Http\Requests\{{ model }}Request\Store{{ model }}Request;
+use App\Modules\{{ modelName }}\Http\Requests\{{ model }}Request\Update{{ model }}Request;
 use Illuminate\Http\JsonResponse;
 
 class {{ model }}Controller extends Controller
