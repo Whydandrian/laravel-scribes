@@ -2,23 +2,23 @@
 
 namespace App\Repositories;
 
-use App\Models\{{ model }};
+use App\Models\{{ modelName }};
 
-class {{ model }}Repository
+class {{ modelName }}Repository
 {
     public function all()
     {
-        return {{ model }}::all();
+        return {{ modelName }}::all();
     }
 
-    public function find(int $id): ?{{ model }}
+    public function find(int $id): ?{{ modelName }}
     {
-        return {{ model }}::find($id);
+        return {{ modelName }}::find($id);
     }
 
-    public function create(array $data): {{ model }}
+    public function create(array $data): {{ modelName }}
     {
-        return {{ model }}::create($data);
+        return {{ modelName }}::create($data);
     }
 
     public function update(int $id, array $data): bool

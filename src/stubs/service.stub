@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\{{ model }};
+namespace App\Services\{{ modelName }};
 
-use App\Repositories\{{ model }}Repository;
+use App\Repositories\{{ modelName }}Repository;
 
-class {{ model }}Service
+class {{ modelName }}Service
 {
     public function __construct(
-        private {{ model }}Repository $repository
+        private {{ modelName }}Repository $repository
     ) {}
 
     public function listAll()
