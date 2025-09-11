@@ -1,0 +1,16 @@
+<?php
+
+return [
+    '{{ moduleNameLower }}' => [
+        'title' => '{{ moduleName }}',
+        'create' => 'Tambah {{ moduleName }}',
+        'edit' => 'Edit {{ moduleName }}',
+        'delete' => 'Hapus {{ moduleName }}',
+        'list' => 'Daftar {{ moduleName }}',
+        'detail' => 'Detail {{ moduleName }}',
+        'success_create' => '{{ moduleName }} berhasil ditambahkan',
+        'success_update' => '{{ moduleName }} berhasil diperbarui',
+        'success_delete' => '{{ moduleName }} berhasil dihapus',
+        'not_found' => '{{ moduleName }} tidak ditemukan',
+    ]
+];

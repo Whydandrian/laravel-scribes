@@ -61,7 +61,8 @@ class MakeRepositoryServiceCommand extends Command
         $basePath = app_path("Modules/{$this->moduleName}");
         
         $directories = [
-            'Config',
+            'Config/lang/id',
+            'Config/lang/en',
             'Http/Controllers',
             'Http/Requests',
             'Http/Middleware',
@@ -80,6 +81,9 @@ class MakeRepositoryServiceCommand extends Command
             }
         }
     
+        // Generate language files
+        $this->generateLanguageFiles($basePath);
+        
         // Generate routes file
         $this->generateRoutesFile($basePath);
         
@@ -99,24 +103,25 @@ class MakeRepositoryServiceCommand extends Command
         $modelName = Str::studly(Str::singular($table));
         $columns = DB::select("SHOW COLUMNS FROM {$table}");
         
-        // Generate Repository
+        // Generate Repository dengan folder {ModelName}Repository
         $this->generateRepository($table, $modelName, $columns);
         
-        // Generate Service
+        // Generate Service dengan folder {ModelName}Service
         $this->generateService($table, $modelName);
         
         // Generate Controller
         $this->generateController($table, $modelName);
         
-        // Generate Requests
+        // Generate Requests dengan folder {ModelName}Request
         $this->generateRequests($table, $modelName, $columns);
     
         $this->line("✅ Files untuk table '{$table}' berhasil dibuat");
     }
 
-    private function generateRepository(string $table, string $modelName): void
+    private function generateRepository(string $table, string $modelName, array $columns): void
     {
-        $repositoryDir = app_path("Modules/{$this->moduleName}/Repositories");
+        $repositoryBaseDir = app_path("Modules/{$this->moduleName}/Repositories");
+        $repositoryDir = "{$repositoryBaseDir}/{$modelName}Repository";
         
         if (!is_dir($repositoryDir)) {
             mkdir($repositoryDir, 0755, true);
@@ -125,11 +130,11 @@ class MakeRepositoryServiceCommand extends Command
         $stub = $this->getRepositoryStub();
         $content = str_replace([
             '{{ namespace }}',
-            '{{ model }}',
+            '{{ moduleName }}',
             '{{ modelName }}'
         ], [
-            "App\\Modules\\{$this->moduleName}\\Repositories",
-            $modelName,
+            "App\\Modules\\{$this->moduleName}\\Repositories\\{$modelName}Repository",
+            $this->moduleName,
             $modelName
         ], $stub);
     
@@ -140,7 +145,8 @@ class MakeRepositoryServiceCommand extends Command
 
     private function generateService(string $table, string $modelName): void
     {
-        $serviceDir = app_path("Modules/{$this->moduleName}/Services");
+        $serviceBaseDir = app_path("Modules/{$this->moduleName}/Services");
+        $serviceDir = "{$serviceBaseDir}/{$modelName}Service";
         
         if (!is_dir($serviceDir)) {
             mkdir($serviceDir, 0755, true);
@@ -149,11 +155,11 @@ class MakeRepositoryServiceCommand extends Command
         $stub = $this->getServiceStub();
         $content = str_replace([
             '{{ namespace }}',
-            '{{ model }}',
+            '{{ moduleName }}',
             '{{ modelName }}'
         ], [
-            "App\\Modules\\{$this->moduleName}\\Services",
-            $modelName,
+            "App\\Modules\\{$this->moduleName}\\Services\\{$modelName}Service",
+            $this->moduleName,
             $modelName
         ], $stub);
     
@@ -207,7 +213,7 @@ class MakeRepositoryServiceCommand extends Command
         
         $rulesStore = $this->generateRules($columns, 'store');
         $rulesUpdate = $this->generateRules($columns, 'update');
-    
+
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
             $stub = $this->getRequestStub();
             $content = str_replace([
@@ -425,4 +431,44 @@ class MakeRepositoryServiceCommand extends Command
             $this->line("💡 Run 'composer dump-autoload' to register the provider");
         }
     }
+    private function generateLanguageFiles(string $basePath): void
+    {
+        // Generate Indonesian language file
+        $langIdStub = $this->getLangIdStub();
+        $langIdContent = str_replace([
+            '{{ moduleName }}',
+            '{{ moduleNameLower }}'
+        ], [
+            $this->moduleName,
+            Str::lower($this->moduleName)
+        ], $langIdStub);
+    
+        $langIdPath = "{$basePath}/Config/lang/id/lang_id.php";
+        file_put_contents($langIdPath, $langIdContent);
+        $this->line("📄 Created: {$langIdPath}");
+    
+        // Generate English language file
+        $langEnStub = $this->getLangEnStub();
+        $langEnContent = str_replace([
+            '{{ moduleName }}',
+            '{{ moduleNameLower }}'
+        ], [
+            $this->moduleName,
+            Str::lower($this->moduleName)
+        ], $langEnStub);
+    
+        $langEnPath = "{$basePath}/Config/lang/en/lang_en.php";
+        file_put_contents($langEnPath, $langEnContent);
+        $this->line("📄 Created: {$langEnPath}");
+    }
+    private function getLangIdStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/lang-id.stub');
+    }
+
+    private function getLangEnStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/lang-en.stub');
+    }
 }
+

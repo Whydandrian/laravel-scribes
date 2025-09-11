@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\{{ modelName }};
+namespace {{ namespace }};
 
-use App\Repositories\{{ modelName }}Repository;
+use App\Modules\{{ moduleName }}\Repositories\{{ modelName }}Repository\{{ modelName }}Repository;
 
 class {{ modelName }}Service
 {
@@ -13,6 +13,11 @@ class {{ modelName }}Service
     public function listAll()
     {
         return $this->repository->all();
+    }
+
+    public function find(int $id)
+    {
+        return $this->repository->find($id);
     }
 
     public function store(array $data)
