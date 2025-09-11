@@ -198,7 +198,7 @@ class MakeRepositoryServiceCommand extends Command
                 $rules
             ], $stub);
 
-            $filePath = "{$requestDir}/{$type}{$modelName}Request.php";
+            $filePath = "{$requestDir}/{$modelName}Request/{$type}{$modelName}Request.php";
             file_put_contents($filePath, $content);
             $this->line("📄 Created: {$filePath}");
         }
