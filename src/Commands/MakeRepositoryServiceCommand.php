@@ -124,19 +124,11 @@ class MakeRepositoryServiceCommand extends Command
             mkdir($repositoryDir, 0755, true);
         }
 
-        $fillable = $this->getFillableFields($columns);
-        
         $stub = $this->getRepositoryStub();
         $content = str_replace([
-            '{{namespace}}',
-            '{{moduleName}}',
-            '{{modelName}}', 
-            '{{fillable}}'
+            '{{ model }}'
         ], [
-            "App\\Modules\\{$this->moduleName}\\Repositories\\{$modelName}Repository",
-            $this->moduleName,
-            $modelName,
-            $fillable
+            $modelName
         ], $stub);
 
         $filePath = "{$repositoryDir}/{$modelName}Repository.php";
@@ -153,15 +145,9 @@ class MakeRepositoryServiceCommand extends Command
 
         $stub = $this->getServiceStub();
         $content = str_replace([
-            '{{namespace}}',
-            '{{moduleName}}',
-            '{{modelName}}',
-            '{{modelNameLower}}'
+            '{{ model }}'
         ], [
-            "App\\Modules\\{$this->moduleName}\\Services\\{$this->moduleName}Service",
-            $this->moduleName,
-            $modelName,
-            Str::camel($modelName)
+            $modelName
         ], $stub);
 
         $filePath = "{$serviceDir}/{$modelName}Service.php";
@@ -176,10 +162,14 @@ class MakeRepositoryServiceCommand extends Command
         $stub = $this->getControllerStub();
         $content = str_replace([
             '{{ namespace }}',
-            '{{ model }}'
+            '{{ model }}',
+            'App\\Services\\{{ model }}',
+            'App\\Http\\Requests\\{{ model }}'
         ], [
             "App\\Modules\\{$this->moduleName}\\Http\\Controllers",
-            $modelName
+            $modelName,
+            "App\\Modules\\{$this->moduleName}\\Services\\{$modelName}Service",
+            "App\\Modules\\{$this->moduleName}\\Http\\Requests"
         ], $stub);
 
         $filePath = "{$controllerDir}/{$modelName}Controller.php";
