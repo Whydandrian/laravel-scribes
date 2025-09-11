@@ -84,6 +84,9 @@ class MakeRepositoryServiceCommand extends Command
         // Generate language files
         $this->generateLanguageFiles($basePath);
         
+        // Generate config file
+        $this->generateModuleConfig($basePath);
+        
         // Generate routes file
         $this->generateRoutesFile($basePath);
         
@@ -470,5 +473,25 @@ class MakeRepositoryServiceCommand extends Command
     {
         return file_get_contents(__DIR__.'/../stubs/lang-en.stub');
     }
+    private function generateModuleConfig(string $basePath): void
+    {
+        $configStub = $this->getModuleConfigStub();
+        $configContent = str_replace([
+            '{{moduleName}}',
+            '{{moduleNameLower}}'
+        ], [
+            $this->moduleName,
+            Str::lower($this->moduleName)
+        ], $configStub);
+    
+        $configPath = "{$basePath}/Config/config.php";
+        file_put_contents($configPath, $configContent);
+        $this->line("📄 Created: {$configPath}");
+    }
+    
+        private function getModuleConfigStub(): string
+        {
+            return file_get_contents(__DIR__.'/../stubs/module-config.stub');
+        }
 }
 
