@@ -138,7 +138,7 @@ class MakeRepositoryServiceCommand extends Command
 
     private function generateService(string $table, string $modelName): void
     {
-        $serviceDir = app_path("Modules/{$this->moduleName}/Services/{$this->moduleName}Service");
+        $serviceDir = app_path("Modules/{$this->moduleName}/Services/");
         if (!is_dir($serviceDir)) {
             mkdir($serviceDir, 0755, true);
         }
@@ -198,7 +198,7 @@ class MakeRepositoryServiceCommand extends Command
                 $rules
             ], $stub);
 
-            $filePath = "{$requestDir}/{$modelName}Request/{$type}{$modelName}Request.php";
+            $filePath = "{$requestDir}/{$type}{$modelName}Request.php";
             file_put_contents($filePath, $content);
             $this->line("📄 Created: {$filePath}");
         }
