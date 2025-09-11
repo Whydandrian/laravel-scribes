@@ -117,20 +117,25 @@ class MakeRepositoryServiceCommand extends Command
         $this->line("✅ Files untuk table '{$table}' berhasil dibuat");
     }
 
-    private function generateRepository(string $table, string $modelName, array $columns): void
+    private function generateRepository(string $table, string $modelName): void
     {
-        $repositoryDir = app_path("Modules/{$this->moduleName}/Repositories/{$modelName}Repository");
+        $repositoryDir = app_path("Modules/{$this->moduleName}/Repositories");
+        
         if (!is_dir($repositoryDir)) {
             mkdir($repositoryDir, 0755, true);
         }
-
+    
         $stub = $this->getRepositoryStub();
         $content = str_replace([
-            '{{ model }}'
+            '{{ namespace }}',
+            '{{ model }}',
+            '{{ modelName }}'
         ], [
+            "App\\Modules\\{$this->moduleName}\\Repositories",
+            $modelName,
             $modelName
         ], $stub);
-
+    
         $filePath = "{$repositoryDir}/{$modelName}Repository.php";
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
@@ -138,18 +143,23 @@ class MakeRepositoryServiceCommand extends Command
 
     private function generateService(string $table, string $modelName): void
     {
-        $serviceDir = app_path("Modules/{$this->moduleName}/Services/");
+        $serviceDir = app_path("Modules/{$this->moduleName}/Services");
+        
         if (!is_dir($serviceDir)) {
             mkdir($serviceDir, 0755, true);
         }
-
+    
         $stub = $this->getServiceStub();
         $content = str_replace([
-            '{{ model }}'
+            '{{ namespace }}',
+            '{{ model }}',
+            '{{ modelName }}'
         ], [
+            "App\\Modules\\{$this->moduleName}\\Services",
+            $modelName,
             $modelName
         ], $stub);
-
+    
         $filePath = "{$serviceDir}/{$modelName}Service.php";
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
@@ -159,19 +169,25 @@ class MakeRepositoryServiceCommand extends Command
     {
         $controllerDir = app_path("Modules/{$this->moduleName}/Http/Controllers");
         
+        if (!is_dir($controllerDir)) {
+            mkdir($controllerDir, 0755, true);
+        }
+    
         $stub = $this->getControllerStub();
         $content = str_replace([
             '{{ namespace }}',
+            '{{ serviceNamespace }}',
+            '{{ requestNamespace }}',
             '{{ model }}',
-            'App\\Services\\{{ model }}',
-            'App\\Http\\Requests\\{{ model }}'
+            '{{ modelName }}'
         ], [
             "App\\Modules\\{$this->moduleName}\\Http\\Controllers",
-            $modelName,
             "App\\Modules\\{$this->moduleName}\\Services\\{$modelName}Service",
-            "App\\Modules\\{$this->moduleName}\\Http\\Requests"
+            "App\\Modules\\{$this->moduleName}\\Http\\Requests",
+            $modelName,
+            $modelName
         ], $stub);
-
+    
         $filePath = "{$controllerDir}/{$modelName}Controller.php";
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
@@ -181,24 +197,30 @@ class MakeRepositoryServiceCommand extends Command
     {
         $requestDir = app_path("Modules/{$this->moduleName}/Http/Requests");
         
+        if (!is_dir($requestDir)) {
+            mkdir($requestDir, 0755, true);
+        }
+        
         $rulesStore = $this->generateRules($columns, 'store');
         $rulesUpdate = $this->generateRules($columns, 'update');
-
+    
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
             $stub = $this->getRequestStub();
             $content = str_replace([
                 '{{ namespace }}',
                 '{{ type }}',
                 '{{ model }}',
+                '{{ modelName }}',
                 '{{ rules }}'
             ], [
                 "App\\Modules\\{$this->moduleName}\\Http\\Requests",
                 $type,
                 $modelName,
+                $modelName,
                 $rules
             ], $stub);
-
-            $filePath = "{$requestDir}/{$modelName}Request/{$type}{$modelName}Request.php";
+    
+            $filePath = "{$requestDir}/{$type}{$modelName}Request.php";
             file_put_contents($filePath, $content);
             $this->line("📄 Created: {$filePath}");
         }
