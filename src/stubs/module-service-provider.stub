@@ -65,7 +65,7 @@ class {{moduleName}}ServiceProvider extends ServiceProvider
         $sourcePath = __DIR__ . '/Presenters';
 
         $this->publishes([
-            $sourcePath => $viewPath
+
         ], ['views', $this->moduleNameLower . '-module-views']);
 
         $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->moduleNameLower);
@@ -119,7 +119,7 @@ class {{moduleName}}ServiceProvider extends ServiceProvider
     private function getPublishableViewPaths(): array
     {
         $paths = [];
-        foreach (\Config::get('view.paths') as $path) {
+        foreach (config('view.paths') as $path) {
             if (is_dir($path . '/modules/' . $this->moduleNameLower)) {
                 $paths[] = $path . '/modules/' . $this->moduleNameLower;
             }
