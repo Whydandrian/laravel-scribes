@@ -67,7 +67,12 @@ class MakeRepositoryServiceCommand extends Command
     private function createModuleStructure(): void
     {
         $basePath = app_path("Modules/{$this->moduleName}");
-        
+        // Jika module sudah ada, skip pembuatan struktur
+        if (is_dir($basePath)) {
+            $this->line("ℹ️  Module {$this->moduleName} sudah ada, skip create structure.");
+            return;
+        }
+
         $directories = [
             'Config/lang/id',
             'Config/lang/en',
@@ -187,6 +192,12 @@ class MakeRepositoryServiceCommand extends Command
         if (!is_dir($repositoryDir)) {
             mkdir($repositoryDir, 0755, true);
         }
+
+        $filePath = "{$repositoryDir}/{$modelName}Repository.php";
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Repository {$modelName}Repository sudah ada, skip.");
+            return;
+        }
     
         $stub = $this->getRepositoryStub();
         $content = str_replace([
@@ -199,7 +210,6 @@ class MakeRepositoryServiceCommand extends Command
             $modelName
         ], $stub);
     
-        $filePath = "{$repositoryDir}/{$modelName}Repository.php";
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
     }
@@ -212,6 +222,12 @@ class MakeRepositoryServiceCommand extends Command
         if (!is_dir($serviceDir)) {
             mkdir($serviceDir, 0755, true);
         }
+
+        $filePath = "{$serviceDir}/{$modelName}Service.php";
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Service {$modelName}Service sudah ada, skip.");
+            return;
+        }
     
         $stub = $this->getServiceStub();
         $content = str_replace([
@@ -223,8 +239,7 @@ class MakeRepositoryServiceCommand extends Command
             $this->moduleName,
             $modelName
         ], $stub);
-    
-        $filePath = "{$serviceDir}/{$modelName}Service.php";
+
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
     }
@@ -235,6 +250,14 @@ class MakeRepositoryServiceCommand extends Command
         
         if (!is_dir($controllerDir)) {
             mkdir($controllerDir, 0755, true);
+        }
+
+        $controllerName = $this->option('controller') ?: "{$modelName}Controller";
+        $filePath = "{$controllerDir}/{$controllerName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Controller {$controllerName} sudah ada, skip.");
+            return;
         }
     
         $stub = $this->getControllerStub();
@@ -252,7 +275,7 @@ class MakeRepositoryServiceCommand extends Command
             $modelName
         ], $stub);
     
-        $filePath = "{$controllerDir}/{$modelName}Controller.php";
+
         file_put_contents($filePath, $content);
         $this->line("📄 Created: {$filePath}");
     }
@@ -276,6 +299,12 @@ class MakeRepositoryServiceCommand extends Command
         $rulesUpdate = $this->generateRules($columns, 'update');
 
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
+            $filePath = "{$modelRequestDir}/{$type}{$modelName}Request.php";
+            if (file_exists($filePath)) {
+                $this->warn("⚠️ Request {$type}{$modelName}Request sudah ada, skip.");
+                continue;
+            }
+
             $stub = $this->getRequestStub();
             $content = str_replace([
                 '{{ namespace }}',
@@ -290,8 +319,7 @@ class MakeRepositoryServiceCommand extends Command
                 $modelName,
                 $rules
             ], $stub);
-    
-            $filePath = "{$modelRequestDir}/{$type}{$modelName}Request.php";
+
             file_put_contents($filePath, $content);
             $this->line("📄 Created: {$filePath}");
         }
