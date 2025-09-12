@@ -11,10 +11,10 @@ class MakeRepositoryServiceCommand extends Command
     protected $signature = 'scribes:make-module 
                             {--name= : Nama module yang akan dibuat}
                             {--table= : Daftar tabel (comma-separated)}
-                            {--controller : Generate controller saja}
-                            {--request : Generate custom request saja}
-                            {--repository : Generate repository saja}
-                            {--service : Generate service saja}
+                            {--controller= : Nama controller custom (opsional)}
+                            {--service= : Nama service custom (opsional)}
+                            {--repository= : Nama repository custom (opsional)}
+                            {--request= : Nama request custom (opsional)}
                             {--all : Generate controller, request, repository & service sekaligus}';
 
     protected $description = 'Generate modular structure untuk Laravel dengan Repository, Service, Controller pattern';
@@ -193,9 +193,14 @@ class MakeRepositoryServiceCommand extends Command
             mkdir($repositoryDir, 0755, true);
         }
 
-        $filePath = "{$repositoryDir}/{$modelName}Repository.php";
+        $repositoryName = $this->option('repository');
+        if (!$repositoryName || $repositoryName === '1') {
+            $repositoryName = "{$modelName}Repository";
+        }
+        $filePath = "{$repositoryDir}/{$repositoryName}.php";
+
         if (file_exists($filePath)) {
-            $this->warn("⚠️ Repository {$modelName}Repository sudah ada, skip.");
+            $this->warn("⚠️ Repository {$repositoryName} sudah ada, skip.");
             return;
         }
     
@@ -223,9 +228,13 @@ class MakeRepositoryServiceCommand extends Command
             mkdir($serviceDir, 0755, true);
         }
 
-        $filePath = "{$serviceDir}/{$modelName}Service.php";
+        $serviceName = $this->option('service');
+        if (!$serviceName || $serviceName === '1') {
+            $serviceName = "{$modelName}Service";
+        }
+        $filePath = "{$serviceDir}/{$serviceName}.php";
         if (file_exists($filePath)) {
-            $this->warn("⚠️ Service {$modelName}Service sudah ada, skip.");
+            $this->warn("⚠️ Service {$serviceName} sudah ada, skip.");
             return;
         }
     
@@ -252,7 +261,10 @@ class MakeRepositoryServiceCommand extends Command
             mkdir($controllerDir, 0755, true);
         }
 
-        $controllerName = $this->option('controller') ?: "{$modelName}Controller";
+        $controllerName = $this->option('controller');
+        if (!$controllerName || $controllerName === '1') {
+            $controllerName = "{$modelName}Controller";
+        }
         $filePath = "{$controllerDir}/{$controllerName}.php";
 
         if (file_exists($filePath)) {
@@ -295,13 +307,18 @@ class MakeRepositoryServiceCommand extends Command
             mkdir($modelRequestDir, 0755, true);
         }
         
+        $requestName = $this->option('request');
         $rulesStore = $this->generateRules($columns, 'store');
         $rulesUpdate = $this->generateRules($columns, 'update');
 
         foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
-            $filePath = "{$modelRequestDir}/{$type}{$modelName}Request.php";
+            $fileName = $requestName && $requestName !== '1'
+            ? "{$type}{$requestName}.php"
+            : "{$type}{$modelName}Request.php";
+            $filePath = "{$modelRequestDir}/{$fileName}";
+
             if (file_exists($filePath)) {
-                $this->warn("⚠️ Request {$type}{$modelName}Request sudah ada, skip.");
+                $this->warn("⚠️ Request {$fileName} sudah ada, skip.");
                 continue;
             }
 
