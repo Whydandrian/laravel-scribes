@@ -53,6 +53,8 @@ class MakeRepositoryServiceCommand extends Command
         // Auto-register service provider
         $this->registerServiceProviderToComposer($this->moduleName);
 
+        $this->registerServiceProviderToBootstrap($this->moduleName);
+
         return Command::SUCCESS;
     }
 
@@ -489,9 +491,47 @@ class MakeRepositoryServiceCommand extends Command
         $this->line("📄 Created: {$configPath}");
     }
     
-        private function getModuleConfigStub(): string
-        {
-            return file_get_contents(__DIR__.'/../stubs/module-config.stub');
+    private function getModuleConfigStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/module-config.stub');
+    }
+
+
+    private function registerServiceProviderToBootstrap(string $moduleName): void
+    {
+        $providerClass = "App\\Modules\\{$moduleName}\\{$moduleName}ServiceProvider";
+        $providersPath = base_path('bootstrap/providers.php');
+
+        if (!file_exists($providersPath)) {
+            $this->warn("⚠️ File bootstrap/providers.php tidak ditemukan.");
+            return;
         }
+
+        // baca file bootstrap/providers.php
+        $content = file_get_contents($providersPath);
+
+        // cek apakah sudah ada
+        if (str_contains($content, $providerClass)) {
+            $this->line("ℹ️ {$providerClass} sudah ada di bootstrap/providers.php");
+            return;
+        }
+
+        // cari posisi array penutup
+        $pattern = '/return\s*\[\s*/m';
+        if (preg_match($pattern, $content)) {
+            // kita tambahkan sebelum tanda ];
+            $content = preg_replace(
+                '/(\];\s*)$/m',
+                "    {$providerClass}::class,\n];",
+                $content
+            );
+
+            file_put_contents($providersPath, $content);
+            $this->line("📦 Added {$providerClass} to bootstrap/providers.php");
+        } else {
+            $this->warn("⚠️ Tidak bisa menemukan array return di bootstrap/providers.php");
+        }
+    }
+
 }
 
