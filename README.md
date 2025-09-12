@@ -41,6 +41,21 @@ composer require whydsee/laravel-scribes
     - Pada service, akan di generate method CRUD.
     - Pada controller, akan di generate method CRUD.
 
+    Jika ingin generate controller, request, repository & service sekaligus, tambahkan flag `--all`.
+    ```bash
+    php artisan scribes:make-module --name=Perkuliahan --table={table_name} --all
+    ```
+
+    Jika ingin generate controller, request, repository & service satu-satu gunakan command:
+
+    ```bash
+    php artisan scribes:make-module --name=Perkuliahan --table={table_name} --controller --request --repository --service
+    ```
+    tag --controller --request --repository --service bersifat opsional, bisa pilih salah satu.
+
+
+    Ganti `{table_name}` dengan nama table yang ingin di generate.
+
 
 ### Catatan
 

@@ -10,7 +10,12 @@ class MakeRepositoryServiceCommand extends Command
 {
     protected $signature = 'scribes:make-module 
                             {--name= : Nama module yang akan dibuat}
-                            {--table= : Daftar tabel (comma-separated)}';
+                            {--table= : Daftar tabel (comma-separated)}
+                            {--controller : Generate controller saja}
+                            {--request : Generate custom request saja}
+                            {--repository : Generate repository saja}
+                            {--service : Generate service saja}
+                            {--all : Generate controller, request, repository & service sekaligus}';
 
     protected $description = 'Generate modular structure untuk Laravel dengan Repository, Service, Controller pattern';
 
@@ -40,7 +45,8 @@ class MakeRepositoryServiceCommand extends Command
         // Generate files untuk setiap table
         if (!empty($this->tables)) {
             foreach ($this->tables as $table) {
-                $this->generateTableFiles($table);
+                // $this->generateTableFiles($table);
+                $this->generateTableFilesByOption($table);
             }
         }
 
@@ -96,30 +102,80 @@ class MakeRepositoryServiceCommand extends Command
         $this->generateModuleServiceProvider($basePath);
     }
 
-    private function generateTableFiles(string $table): void
+    // private function generateTableFiles(string $table): void
+    // {
+    //     if (!$this->tableExists($table)) {
+    //         $this->error("❌ Table '{$table}' tidak ditemukan di database");
+    //         return;
+    //     }
+    
+    //     $this->info("🔄 Processing table: {$table}");
+    
+    //     $modelName = Str::studly(Str::singular($table));
+    //     $columns = DB::select("SHOW COLUMNS FROM {$table}");
+        
+    //     // Generate Repository dengan folder {ModelName}Repository
+    //     $this->generateRepository($table, $modelName, $columns);
+        
+    //     // Generate Service dengan folder {ModelName}Service
+    //     $this->generateService($table, $modelName);
+        
+    //     // Generate Controller
+    //     $this->generateController($table, $modelName);
+        
+    //     // Generate Requests dengan folder {ModelName}Request
+    //     $this->generateRequests($table, $modelName, $columns);
+    
+    //     $this->line("✅ Files untuk table '{$table}' berhasil dibuat");
+    // }
+
+    private function generateTableFilesByOption(string $table): void
     {
         if (!$this->tableExists($table)) {
             $this->error("❌ Table '{$table}' tidak ditemukan di database");
             return;
         }
-    
+
         $this->info("🔄 Processing table: {$table}");
-    
+
         $modelName = Str::studly(Str::singular($table));
         $columns = DB::select("SHOW COLUMNS FROM {$table}");
-        
-        // Generate Repository dengan folder {ModelName}Repository
-        $this->generateRepository($table, $modelName, $columns);
-        
-        // Generate Service dengan folder {ModelName}Service
-        $this->generateService($table, $modelName);
-        
-        // Generate Controller
-        $this->generateController($table, $modelName);
-        
-        // Generate Requests dengan folder {ModelName}Request
-        $this->generateRequests($table, $modelName, $columns);
-    
+
+        // Cek opsi
+        $onlyController = $this->option('controller');
+        $onlyRequest    = $this->option('request');
+        $onlyRepository = $this->option('repository');
+        $onlyService    = $this->option('service');
+        $all            = $this->option('all');
+
+        // Jika --all, generate semua
+        if ($all) {
+            $this->generateRepository($table, $modelName, $columns);
+            $this->generateService($table, $modelName);
+            $this->generateController($table, $modelName);
+            $this->generateRequests($table, $modelName, $columns);
+        } else {
+            if ($onlyRepository) {
+                $this->generateRepository($table, $modelName, $columns);
+            }
+            if ($onlyService) {
+                $this->generateService($table, $modelName);
+            }
+            if ($onlyController) {
+                $this->generateController($table, $modelName);
+            }
+            if ($onlyRequest) {
+                $this->generateRequests($table, $modelName, $columns);
+            }
+            // Jika tidak ada opsi, default generate semua (bisa diubah sesuai kebutuhan)
+            if (!$onlyRepository && !$onlyService && !$onlyController && !$onlyRequest) {
+                $this->generateRepository($table, $modelName, $columns);
+                $this->generateService($table, $modelName);
+                $this->generateController($table, $modelName);
+                $this->generateRequests($table, $modelName, $columns);
+            }
+        }
+
         $this->line("✅ Files untuk table '{$table}' berhasil dibuat");
     }
 
