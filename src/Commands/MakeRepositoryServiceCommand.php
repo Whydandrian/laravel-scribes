@@ -539,6 +539,8 @@ class MakeRepositoryServiceCommand extends Command
     }
     private function generateLanguageFiles(string $basePath): void
     {
+        $moduleNameLower = Str::lower($this->moduleName);
+        
         // Generate Indonesian language file
         $langIdStub = $this->getLangIdStub();
         $langIdContent = str_replace([
@@ -546,10 +548,10 @@ class MakeRepositoryServiceCommand extends Command
             '{{ moduleNameLower }}'
         ], [
             $this->moduleName,
-            Str::lower($this->moduleName)
+            $moduleNameLower
         ], $langIdStub);
     
-        $langIdPath = "{$basePath}/Config/lang/id/lang_id.php";
+        $langIdPath = "{$basePath}/Config/lang/id/messages.php";
         file_put_contents($langIdPath, $langIdContent);
         $this->line("📄 Created: {$langIdPath}");
     
@@ -560,10 +562,10 @@ class MakeRepositoryServiceCommand extends Command
             '{{ moduleNameLower }}'
         ], [
             $this->moduleName,
-            Str::lower($this->moduleName)
+            $moduleNameLower
         ], $langEnStub);
     
-        $langEnPath = "{$basePath}/Config/lang/en/lang_en.php";
+        $langEnPath = "{$basePath}/Config/lang/en/messages.php";
         file_put_contents($langEnPath, $langEnContent);
         $this->line("📄 Created: {$langEnPath}");
     }

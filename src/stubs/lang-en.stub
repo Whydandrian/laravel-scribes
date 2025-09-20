@@ -1,16 +1,8 @@
 <?php
 
 return [
-    '{{ moduleNameLower }}' => [
+    'components' => [
         'title' => '{{ moduleName }}',
-        'create' => 'Create {{ moduleName }}',
-        'edit' => 'Edit {{ moduleName }}',
-        'delete' => 'Delete {{ moduleName }}',
-        'list' => '{{ moduleName }} List',
-        'detail' => '{{ moduleName }} Detail',
-        'success_create' => '{{ moduleName }} created successfully',
-        'success_update' => '{{ moduleName }} updated successfully',
-        'success_delete' => '{{ moduleName }} deleted successfully',
-        'not_found' => '{{ moduleName }} not found',
+        'other' => 'Others',
     ]
 ];
