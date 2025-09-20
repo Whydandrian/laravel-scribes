@@ -1,0 +1,36 @@
+<?php
+
+namespace {{ namespace }};
+
+class {{ repositoryName }}
+{
+    public function findAll(): array
+    {
+        // TODO: Implement find all logic
+        return [];
+    }
+
+    public function findById(int $id): ?array
+    {
+        // TODO: Implement find by id logic
+        return null;
+    }
+
+    public function create(array $data): array
+    {
+        // TODO: Implement create logic
+        return [];
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        // TODO: Implement update logic
+        return true;
+    }
+
+    public function delete(int $id): bool
+    {
+        // TODO: Implement delete logic
+        return true;
+    }
+}

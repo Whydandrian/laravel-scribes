@@ -42,26 +42,94 @@ class MakeRepositoryServiceCommand extends Command
         // Create module structure
         $this->createModuleStructure();
         
-        // Generate files untuk setiap table
-        if (!empty($this->tables)) {
+        // Cek apakah ada opsi individual component
+        $hasIndividualOptions = $this->option('controller') || 
+                               $this->option('service') || 
+                               $this->option('repository') || 
+                               $this->option('request');
+
+        if ($hasIndividualOptions) {
+            // Generate individual components
+            $this->generateIndividualComponents();
+        } elseif (!empty($this->tables)) {
+            // Generate files untuk setiap table (mode lama)
             foreach ($this->tables as $table) {
-                // $this->generateTableFiles($table);
                 $this->generateTableFilesByOption($table);
             }
         }
 
         $this->info("✅ Module {$this->moduleName} berhasil dibuat!");
         
-        if (empty($this->tables)) {
+        if (empty($this->tables) && !$hasIndividualOptions) {
             $this->warn("💡 Tip: Gunakan --table=table1,table2 untuk langsung generate Repository, Service, dan Controller");
+            $this->warn("💡 Atau gunakan --controller=NamaController untuk generate individual component");
         }
 
         // Auto-register service provider
         $this->registerServiceProviderToComposer($this->moduleName);
-
         $this->registerServiceProviderToBootstrap($this->moduleName);
 
         return Command::SUCCESS;
+    }
+
+    private function generateIndividualComponents(): void
+    {
+        $controllerName = $this->option('controller');
+        $serviceName = $this->option('service');
+        $repositoryName = $this->option('repository');
+        $requestName = $this->option('request');
+        $tableName = $this->tables[0] ?? null; // Ambil table pertama jika ada
+
+        // Generate Controller
+        if ($controllerName) {
+            if ($tableName && $this->tableExists($tableName)) {
+                // Generate controller dengan table reference
+                $modelName = Str::studly(Str::singular($tableName));
+                $columns = DB::select("SHOW COLUMNS FROM {$tableName}");
+                $this->generateControllerWithTable($tableName, $modelName, $controllerName, $columns);
+            } else {
+                // Generate controller kosong (hanya method)
+                $this->generateEmptyController($controllerName);
+            }
+        }
+
+        // Generate Service
+        if ($serviceName) {
+            if ($tableName && $this->tableExists($tableName)) {
+                // Generate service dengan table reference
+                $modelName = Str::studly(Str::singular($tableName));
+                $this->generateServiceWithTable($tableName, $modelName, $serviceName);
+            } else {
+                // Generate service kosong
+                $this->generateEmptyService($serviceName);
+            }
+        }
+
+        // Generate Repository
+        if ($repositoryName) {
+            if ($tableName && $this->tableExists($tableName)) {
+                // Generate repository dengan table reference
+                $modelName = Str::studly(Str::singular($tableName));
+                $columns = DB::select("SHOW COLUMNS FROM {$tableName}");
+                $this->generateRepositoryWithTable($tableName, $modelName, $repositoryName, $columns);
+            } else {
+                // Generate repository kosong
+                $this->generateEmptyRepository($repositoryName);
+            }
+        }
+
+        // Generate Request
+        if ($requestName) {
+            if ($tableName && $this->tableExists($tableName)) {
+                // Generate request dengan table reference
+                $modelName = Str::studly(Str::singular($tableName));
+                $columns = DB::select("SHOW COLUMNS FROM {$tableName}");
+                $this->generateRequestsWithTable($tableName, $modelName, $requestName, $columns);
+            } else {
+                // Generate request kosong
+                $this->generateEmptyRequests($requestName);
+            }
+        }
     }
 
     private function createModuleStructure(): void
@@ -637,4 +705,307 @@ class MakeRepositoryServiceCommand extends Command
     }
 
 }
+
+    // Method untuk generate controller kosong
+    private function generateEmptyController(string $controllerName): void
+    {
+        $controllerDir = app_path("Modules/{$this->moduleName}/Http/Controllers");
+        
+        if (!is_dir($controllerDir)) {
+            mkdir($controllerDir, 0755, true);
+        }
+
+        $filePath = "{$controllerDir}/{$controllerName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Controller {$controllerName} sudah ada, skip.");
+            return;
+        }
+
+        // Generate custom request untuk controller kosong
+        $requestName = str_replace('Controller', 'Request', $controllerName);
+        $this->generateEmptyRequests($requestName);
+
+        $stub = $this->getEmptyControllerStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ requestNamespace }}',
+            '{{ controllerName }}',
+            '{{ requestName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Http\\Controllers",
+            "App\\Modules\\{$this->moduleName}\\Http\\Requests",
+            $controllerName,
+            $requestName
+        ], $stub);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate controller dengan table reference
+    private function generateControllerWithTable(string $table, string $modelName, string $controllerName, array $columns): void
+    {
+        $controllerDir = app_path("Modules/{$this->moduleName}/Http/Controllers");
+        
+        if (!is_dir($controllerDir)) {
+            mkdir($controllerDir, 0755, true);
+        }
+
+        $filePath = "{$controllerDir}/{$controllerName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Controller {$controllerName} sudah ada, skip.");
+            return;
+        }
+
+        // Generate requests untuk controller dengan table
+        $requestBaseName = str_replace('Controller', '', $controllerName);
+        $this->generateRequestsWithTable($table, $modelName, $requestBaseName . 'Request', $columns);
+
+        $stub = $this->getControllerStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ serviceNamespace }}',
+            '{{ requestNamespace }}',
+            '{{ model }}',
+            '{{ modelName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Http\\Controllers",
+            "App\\Modules\\{$this->moduleName}\\Services\\{$modelName}Service",
+            "App\\Modules\\{$this->moduleName}\\Http\\Requests",
+            $modelName,
+            $modelName
+        ], $stub);
+
+        // Replace controller class name
+        $content = str_replace($modelName . 'Controller', $controllerName, $content);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate service kosong
+    private function generateEmptyService(string $serviceName): void
+    {
+        $serviceDir = app_path("Modules/{$this->moduleName}/Services");
+        
+        if (!is_dir($serviceDir)) {
+            mkdir($serviceDir, 0755, true);
+        }
+
+        $filePath = "{$serviceDir}/{$serviceName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Service {$serviceName} sudah ada, skip.");
+            return;
+        }
+
+        $stub = $this->getEmptyServiceStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ serviceName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Services",
+            $serviceName
+        ], $stub);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate service dengan table reference
+    private function generateServiceWithTable(string $table, string $modelName, string $serviceName): void
+    {
+        $serviceBaseDir = app_path("Modules/{$this->moduleName}/Services");
+        $serviceDir = "{$serviceBaseDir}/{$modelName}Service";
+        
+        if (!is_dir($serviceDir)) {
+            mkdir($serviceDir, 0755, true);
+        }
+
+        $filePath = "{$serviceDir}/{$serviceName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Service {$serviceName} sudah ada, skip.");
+            return;
+        }
+
+        $stub = $this->getServiceStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ moduleName }}',
+            '{{ modelName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Services\\{$modelName}Service",
+            $this->moduleName,
+            $modelName
+        ], $stub);
+
+        // Replace service class name
+        $content = str_replace($modelName . 'Service', $serviceName, $content);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate repository kosong
+    private function generateEmptyRepository(string $repositoryName): void
+    {
+        $repositoryDir = app_path("Modules/{$this->moduleName}/Repositories");
+        
+        if (!is_dir($repositoryDir)) {
+            mkdir($repositoryDir, 0755, true);
+        }
+
+        $filePath = "{$repositoryDir}/{$repositoryName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Repository {$repositoryName} sudah ada, skip.");
+            return;
+        }
+
+        $stub = $this->getEmptyRepositoryStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ repositoryName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Repositories",
+            $repositoryName
+        ], $stub);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate repository dengan table reference
+    private function generateRepositoryWithTable(string $table, string $modelName, string $repositoryName, array $columns): void
+    {
+        $repositoryBaseDir = app_path("Modules/{$this->moduleName}/Repositories");
+        $repositoryDir = "{$repositoryBaseDir}/{$modelName}Repository";
+        
+        if (!is_dir($repositoryDir)) {
+            mkdir($repositoryDir, 0755, true);
+        }
+
+        $filePath = "{$repositoryDir}/{$repositoryName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Repository {$repositoryName} sudah ada, skip.");
+            return;
+        }
+
+        $stub = $this->getRepositoryStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ moduleName }}',
+            '{{ modelName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Repositories\\{$modelName}Repository",
+            $this->moduleName,
+            $modelName
+        ], $stub);
+
+        // Replace repository class name
+        $content = str_replace($modelName . 'Repository', $repositoryName, $content);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate request kosong
+    private function generateEmptyRequests(string $requestName): void
+    {
+        $requestDir = app_path("Modules/{$this->moduleName}/Http/Requests");
+        
+        if (!is_dir($requestDir)) {
+            mkdir($requestDir, 0755, true);
+        }
+
+        $filePath = "{$requestDir}/{$requestName}.php";
+
+        if (file_exists($filePath)) {
+            $this->warn("⚠️ Request {$requestName} sudah ada, skip.");
+            return;
+        }
+
+        $stub = $this->getEmptyRequestStub();
+        $content = str_replace([
+            '{{ namespace }}',
+            '{{ requestName }}'
+        ], [
+            "App\\Modules\\{$this->moduleName}\\Http\\Requests",
+            $requestName
+        ], $stub);
+
+        file_put_contents($filePath, $content);
+        $this->line("📄 Created: {$filePath}");
+    }
+
+    // Method untuk generate request dengan table reference
+    private function generateRequestsWithTable(string $table, string $modelName, string $requestName, array $columns): void
+    {
+        $requestDir = app_path("Modules/{$this->moduleName}/Http/Requests");
+        $modelRequestDir = "{$requestDir}/{$modelName}Request";
+        
+        if (!is_dir($requestDir)) {
+            mkdir($requestDir, 0755, true);
+        }
+        
+        if (!is_dir($modelRequestDir)) {
+            mkdir($modelRequestDir, 0755, true);
+        }
+        
+        $rulesStore = $this->generateRules($columns, 'store');
+        $rulesUpdate = $this->generateRules($columns, 'update');
+
+        foreach (['Store' => $rulesStore, 'Update' => $rulesUpdate] as $type => $rules) {
+            $fileName = "{$type}{$requestName}.php";
+            $filePath = "{$modelRequestDir}/{$fileName}";
+
+            if (file_exists($filePath)) {
+                $this->warn("⚠️ Request {$fileName} sudah ada, skip.");
+                continue;
+            }
+
+            $stub = $this->getRequestStub();
+            $content = str_replace([
+                '{{ namespace }}',
+                '{{ type }}',
+                '{{ model }}',
+                '{{ modelName }}',
+                '{{ rules }}'
+            ], [
+                "App\\Modules\\{$this->moduleName}\\Http\\Requests\\{$modelName}Request",
+                $type,
+                $modelName,
+                $modelName,
+                $rules
+            ], $stub);
+
+            file_put_contents($filePath, $content);
+            $this->line("📄 Created: {$filePath}");
+        }
+    }
+
+    // Method untuk mendapatkan stub kosong
+    private function getEmptyControllerStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/empty-controller.stub');
+    }
+
+    private function getEmptyServiceStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/empty-service.stub');
+    }
+
+    private function getEmptyRepositoryStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/empty-repository.stub');
+    }
+
+    private function getEmptyRequestStub(): string
+    {
+        return file_get_contents(__DIR__.'/../stubs/empty-request.stub');
+    }
 
