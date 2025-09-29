@@ -430,10 +430,18 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function getStub($type)
     {
-        $stubPath = __DIR__."/stubs/{$type}.stub";
-        if (!file_exists($stubPath)) {
-            throw new \Exception("Stub file {$type}.stub not found.");
+        $stubPath = __DIR__.'/../stubs/'.$type.'.stub';
+
+        $publishedPath = base_path('stubs/repogenerator/'.$type.'.stub');
+
+        if (file_exists($publishedPath)) {
+            return file_get_contents($publishedPath);
         }
+
+        if (!file_exists($stubPath)) {
+            throw new \Exception("Stub file {$type}.stub not found. Checked {$stubPath} and {$publishedPath}");
+        }
+
         return file_get_contents($stubPath);
     }
 
