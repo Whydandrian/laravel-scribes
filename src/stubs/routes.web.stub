@@ -17,13 +17,19 @@ use Illuminate\Support\Facades\Route;
 | {namaModule}.{routeName}. Contoh : authentication.login
 |
 */
+Route::middleware('auth')->group(function () {
 
-Route::prefix('{{moduleNameLower}}')->name('{{moduleNameLower}}.')->group(function () {
-    
-    // Dashboard route
-    Route::get('/', function () {
-        return view('');
-    })->name('dashboard');
 
-    
+    Route::prefix('{{moduleNameLower}}')->name('{{moduleNameLower}}.')->group(function () {
+        
+        // Dashboard route
+        Route::get('/', function () {
+            return '';
+        })->name('name');
+
+        
+    });
+
+
+
 });

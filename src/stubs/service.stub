@@ -1,14 +1,17 @@
 <?php
 
-namespace {{ namespace }};
+namespace {{namespace}};
 
-use App\Modules\{{ moduleName }}\Repositories\{{ modelName }}Repository\{{ modelName }}Repository;
+use App\Modules\{{moduleName}}\Repositories\{{modelName}}Repository\{{modelName}}Interface;
 
-class {{ modelName }}Service
+class {{class}}
 {
-    public function __construct(
-        private {{ modelName }}Repository $repository
-    ) {}
+    private {{modelName}}Interface $repository;
+
+    public function __construct({{modelName}}Interface $repository)
+    {
+        $this->repository = $repository;
+    }
 
     public function listAll()
     {

@@ -1,20 +1,20 @@
 <?php
 
-namespace {{ namespace }};
+namespace {{namespace}};
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class {{ type }}{{ model }}Request extends FormRequest
+class {{class}} extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
         return true;
     }
 
-    public function rules(): array
+    public function rules()
     {
         return [
-            {{ rules }}
+            // aturan validasi untuk tabel {{table}}
         ];
     }
 }

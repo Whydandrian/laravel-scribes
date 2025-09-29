@@ -14,14 +14,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('{{moduleNameLower}}')->name('{{moduleNameLower}}.')->group(function () {
-    
-    // Add your API routes here
-    // Example:
-    // Route::apiResource('users', 'UserController');
-    
-    // Bulk operations
-    // Route::post('users/bulk-delete', 'UserController@bulkDestroy')->name('users.bulk-delete');
-    
+
     // Custom API endpoints
     // Route::get('users/search', 'UserController@search')->name('users.search');
     
