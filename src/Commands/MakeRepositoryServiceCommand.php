@@ -416,11 +416,24 @@ class MakeRepositoryServiceCommand extends Command
         if (strpos($content, $providerClass) === false) {
             $providers = include $providersPath;
             if (is_array($providers)) {
-                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider";
+                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
 
+                // rebuild providers.php
                 $php = "<?php\n\nreturn [\n";
                 foreach ($providers as $prov) {
-                    $php .= "    {$prov},\n";
+                    // pastikan string literal
+                    $provString = (string) $prov;
+                    // bungkus dengan tanda kutip jika belum
+                    if (strpos($provString, '::class') !== false) {
+                        // hilangkan ::class dulu
+                        $provString = str_replace('::class', '', $provString);
+                        $provString = trim($provString, '\\ ');
+                        // tulis ulang sebagai ...::class
+                        $php .= "    {$provString}::class,\n";
+                    } else {
+                        // kalau belum ada ::class, tulis sebagai string literal
+                        $php .= "    {$provString}::class,\n";
+                    }
                 }
                 $php .= "];\n";
 
