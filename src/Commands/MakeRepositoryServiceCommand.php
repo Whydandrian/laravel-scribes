@@ -403,15 +403,35 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function updateBootstrapApp($name)
     {
-        $appPath = base_path('bootstrap/app.php');
+        $providersPath = base_path('bootstrap/providers.php');
+        if (!file_exists($providersPath)) {
+            $this->warn("File bootstrap/providers.php tidak ditemukan, skip.");
+            return;
+        }
+
         $providerClass = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
 
-        $content = file_get_contents($appPath);
+        $content = file_get_contents($providersPath);
+
         if (strpos($content, $providerClass) === false) {
-            $content .= "\n// Register {$name} Module Service Provider\n";
-            $content .= "\$app->register(App\\Modules\\{$name}\\{$name}ServiceProvider::class);\n";
-            file_put_contents($appPath, $content);
-            $this->info("Registered {$name}ServiceProvider to bootstrap/app.php");
+            $providers = include $providersPath;
+            if (is_array($providers)) {
+                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
+
+                $php = "<?php\n\nreturn [\n";
+                foreach ($providers as $prov) {
+                    $php .= "    {$prov},\n";
+                }
+                $php .= "];\n";
+
+                file_put_contents($providersPath, $php);
+
+                $this->info("Registered {$name}ServiceProvider to bootstrap/providers.php");
+            } else {
+                $this->warn("Isi bootstrap/providers.php bukan array provider, skip.");
+            }
+        } else {
+            $this->warn("{$name}ServiceProvider sudah terdaftar di bootstrap/providers.php, skip.");
         }
     }
 
