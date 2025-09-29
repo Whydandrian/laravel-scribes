@@ -409,43 +409,31 @@ class MakeRepositoryServiceCommand extends Command
             return;
         }
 
-        $providerClass = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
+        $providerClass = "App\\Modules\\{$name}\\{$name}ServiceProvider";
 
-        $content = file_get_contents($providersPath);
+        $providers = include $providersPath;
 
-        if (strpos($content, $providerClass) === false) {
-            $providers = include $providersPath;
-            if (is_array($providers)) {
-                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
+        if (!is_array($providers)) {
+            $this->warn("Isi bootstrap/providers.php bukan array provider, skip.");
+            return;
+        }
 
-                // rebuild providers.php
-                $php = "<?php\n\nreturn [\n";
-                foreach ($providers as $prov) {
-                    // pastikan string literal
-                    $provString = (string) $prov;
-                    // bungkus dengan tanda kutip jika belum
-                    if (strpos($provString, '::class') !== false) {
-                        // hilangkan ::class dulu
-                        $provString = str_replace('::class', '', $provString);
-                        $provString = trim($provString, '\\ ');
-                        // tulis ulang sebagai ...::class
-                        $php .= "    {$provString}::class,\n";
-                    } else {
-                        // kalau belum ada ::class, tulis sebagai string literal
-                        $php .= "    {$provString}::class,\n";
-                    }
-                }
-                $php .= "];\n";
-
-                file_put_contents($providersPath, $php);
-
-                $this->info("Registered {$name}ServiceProvider to bootstrap/providers.php");
-            } else {
-                $this->warn("Isi bootstrap/providers.php bukan array provider, skip.");
-            }
+        if (!in_array($providerClass, $providers)) {
+            $providers[] = $providerClass;
         } else {
             $this->warn("{$name}ServiceProvider sudah terdaftar di bootstrap/providers.php, skip.");
+            return;
         }
+
+        $php = "<?php\n\nreturn [\n";
+        foreach ($providers as $prov) {
+            $php .= "    {$prov}::class,\n";
+        }
+        $php .= "];\n";
+
+        file_put_contents($providersPath, $php);
+
+        $this->info("Registered {$name}ServiceProvider to bootstrap/providers.php");
     }
 
     protected function updateComposerJson($name)
