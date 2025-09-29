@@ -416,7 +416,7 @@ class MakeRepositoryServiceCommand extends Command
         if (strpos($content, $providerClass) === false) {
             $providers = include $providersPath;
             if (is_array($providers)) {
-                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider::class";
+                $providers[] = "App\\Modules\\{$name}\\{$name}ServiceProvider";
 
                 $php = "<?php\n\nreturn [\n";
                 foreach ($providers as $prov) {
