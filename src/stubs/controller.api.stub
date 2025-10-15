@@ -28,7 +28,7 @@ class {{class}} extends ApiController
     /**
      * Store a newly created resource.
      */
-    public function store({{storeRequest}} $request)
+    public function store({{storeRequestCustom}} $request)
     {
         return $this->service->create($request->validated());
     }
@@ -44,7 +44,7 @@ class {{class}} extends ApiController
     /**
      * Update the specified resource.
      */
-    public function update({{modelName}}UpdateRequest $request, $id)
+    public function update({{updateRequestCustom}} $request, $id)
     {
         return $this->service->update($id, $request->validated());
     }

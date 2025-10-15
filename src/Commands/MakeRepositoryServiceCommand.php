@@ -216,6 +216,9 @@ class MakeRepositoryServiceCommand extends Command
         $storeRequest = "{$moduleNamespace}\\Http\\Requests\\Store{$modelName}Request";
         $updateRequest = "{$moduleNamespace}\\Http\\Requests\\Update{$modelName}Request";
         $serviceNamespace = "{$moduleNamespace}\\Services\\{$modelName}Service\\{$modelName}Service";
+        $customStoreRequest = "Store{$modelName}Request";
+        $customUpdateRequest = "Update{$modelName}Request";
+
 
         $content = str_replace(
             [
@@ -223,7 +226,9 @@ class MakeRepositoryServiceCommand extends Command
                 '{{class}}',
                 '{{table}}',
                 '{{storeRequest}}',
+                '{{storeRequestCustom}}',
                 '{{updateRequest}}',
+                '{{updateRequestCustom}}',
                 '{{serviceNamespace}}',
                 '{{modelName}}',
                 '{{moduleName}}',
@@ -233,7 +238,9 @@ class MakeRepositoryServiceCommand extends Command
                 $controllerName,
                 $table,
                 "use {$storeRequest};",
+                "{$customStoreRequest}",
                 "use {$updateRequest};",
+                "{$customUpdateRequest}",
                 $serviceNamespace,
                 $modelName,
                 $moduleName,
