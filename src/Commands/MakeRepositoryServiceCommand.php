@@ -213,8 +213,8 @@ class MakeRepositoryServiceCommand extends Command
 
         $stub = $isApi ? $this->getStub('controller.api') : $this->getStub('controller');
 
-        $storeRequest = "{$moduleNamespace}\\Http\\Requests\\Store{$modelName}Request";
-        $updateRequest = "{$moduleNamespace}\\Http\\Requests\\Update{$modelName}Request";
+        $storeRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Store{$modelName}Request";
+        $updateRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Update{$modelName}Request";
         $serviceNamespace = "{$moduleNamespace}\\Services\\{$modelName}Service\\{$modelName}Service";
         $customStoreRequest = "Store{$modelName}Request";
         $customUpdateRequest = "Update{$modelName}Request";
