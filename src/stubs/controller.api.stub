@@ -30,7 +30,7 @@ class {{class}} extends ApiController
      */
     public function store({{storeRequestCustom}} $request)
     {
-        return $this->service->create($request->validated());
+        return $this->service->store($request->validated());
     }
 
     /**
