@@ -4,17 +4,25 @@ namespace {{namespace}};
 
 use App\Http\Controllers\ApiController;
 use Illuminate\Http\Request;
-use App\Http\Requests\{{storeRequest}};
-use App\Http\Requests\{{updateRequest}};
+use {{storeRequestNamespace}};
+use {{updateRequestNamespace}};
+use {{serviceNamespace}};
 
 class {{class}} extends ApiController
 {
+    protected $service;
+
+    public function __construct({{modelName}}Service $service)
+    {
+        $this->service = $service;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // contoh pakai table: {{table}}
+        return $this->service->getAll();
     }
 
     /**
@@ -22,23 +30,23 @@ class {{class}} extends ApiController
      */
     public function store({{storeRequest}} $request)
     {
-        //
+        return $this->service->create($request->validated());
     }
 
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show({{modelName}} $id)
     {
-        //
+        return $this->service->find($id);
     }
 
     /**
      * Update the specified resource.
      */
-    public function update({{updateRequest}} $request, $id)
+    public function update({{modelName}}UpdateRequest $request, $id)
     {
-        //
+        return $this->service->update($id, $request->validated());
     }
 
     /**
@@ -46,6 +54,6 @@ class {{class}} extends ApiController
      */
     public function destroy($id)
     {
-        //
+        return $this->service->delete($id);
     }
 }
