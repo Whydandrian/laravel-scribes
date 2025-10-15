@@ -4,8 +4,8 @@ namespace {{namespace}};
 
 use App\Http\Controllers\ApiController;
 use Illuminate\Http\Request;
-use {{storeRequestNamespace}};
-use {{updateRequestNamespace}};
+use {{storeRequest}};
+use {{updateRequest}};
 use {{serviceNamespace}};
 
 class {{class}} extends ApiController
