@@ -22,7 +22,7 @@ class {{class}} extends ApiController
      */
     public function index()
     {
-        return $this->service->getAll();
+        return $this->service->listAll();
     }
 
     /**
@@ -36,7 +36,7 @@ class {{class}} extends ApiController
     /**
      * Display the specified resource.
      */
-    public function show({{modelName}} $id)
+    public function find($id)
     {
         return $this->service->find($id);
     }
