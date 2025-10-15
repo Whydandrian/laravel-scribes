@@ -194,36 +194,55 @@ class MakeRepositoryServiceCommand extends Command
     {
         $moduleName = $this->option('name');
         $moduleBase = $this->moduleBasePath($moduleName);
+        $moduleNamespace = "App\\Modules\\{$moduleName}";
 
-        if ($isApi && Str::startsWith($controllerOption, 'Api/')) {
-            $controllerOption = Str::after($controllerOption, 'Api/');
+        $modelName = $table ? Str::studly(Str::singular($table)) : $moduleName;
+        $controllerName = "{$modelName}Controller";
+
+        $controllerBasePath = $isApi
+            ? "{$moduleBase}/Http/Controllers/Api"
+            : "{$moduleBase}/Http/Controllers";
+
+        $controllerNamespace = $isApi
+            ? "{$moduleNamespace}\\Http\\Controllers\\Api"
+            : "{$moduleNamespace}\\Http\\Controllers";
+
+        if (!is_dir($controllerBasePath)) {
+            mkdir($controllerBasePath, 0755, true);
         }
-
-        [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
-            $controllerOption,  
-            $isApi ? $moduleBase.'/Http/Controllers/Api' : $moduleBase.'/Http/Controllers',
-            $isApi ? 'App\\Http\\Controllers\\Api' : 'App\\Http\\Controllers'
-        );
 
         $stub = $isApi ? $this->getStub('controller.api') : $this->getStub('controller');
 
-        $modelName = $table ? Str::studly(Str::singular($table)) : $moduleName;
-        $storeRequest = "Store{$modelName}Request";
-        $updateRequest = "Update{$modelName}Request";
+        $storeRequest = "{$moduleNamespace}\\Http\\Requests\\Store{$modelName}Request";
+        $updateRequest = "{$moduleNamespace}\\Http\\Requests\\Update{$modelName}Request";
+        $serviceNamespace = "{$moduleNamespace}\\Services\\{$modelName}Service\\{$modelName}Service";
 
         $content = str_replace(
-            ['{{namespace}}', '{{class}}', '{{table}}', '{{storeRequest}}','{{updateRequest}}'],
-            [$namespace, $className, $table, $storeRequest, $updateRequest],
+            [
+                '{{namespace}}',
+                '{{class}}',
+                '{{table}}',
+                '{{storeRequest}}',
+                '{{updateRequest}}',
+                '{{serviceNamespace}}',
+                '{{modelName}}',
+                '{{moduleName}}',
+            ],
+            [
+                $controllerNamespace,
+                $controllerName,
+                $table,
+                "use {$storeRequest};",
+                "use {$updateRequest};",
+                $serviceNamespace,
+                $modelName,
+                $moduleName,
+            ],
             $stub
         );
-        $filePath = "{$basePath}/{$className}.php";
-        if (file_exists($filePath)) {
-            $this->warn("Controller {$namespace}\\{$className} sudah ada, skip.");
-            return;
-        }
 
-        $filePath = "{$basePath}/{$className}.php";
-        $this->putFileIfNotExists($filePath, $content, "Controller {$namespace}\\{$className}");
+        $filePath = "{$controllerBasePath}/{$controllerName}.php";
+        $this->putFileIfNotExists($filePath, $content, "Controller {$controllerNamespace}\\{$controllerName}");
     }
 
     protected function generateRequest($requestOption, $table = null)

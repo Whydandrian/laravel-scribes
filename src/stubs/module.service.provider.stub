@@ -4,9 +4,13 @@ namespace App\Modules\{{moduleName}};
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use App\Traits\GlobalServiceProviderTrait;
+
 
 class {{moduleName}}ServiceProvider extends ServiceProvider
 {
+    use GlobalServiceProviderTrait;
+
     protected string $moduleName = '{{moduleName}}';
     protected string $moduleNameLower = '{{moduleNameLower}}';
 
@@ -90,12 +94,7 @@ class {{moduleName}}ServiceProvider extends ServiceProvider
      */
     protected function registerRepositories(): void
     {
-        // Register your repositories here
-        // Example:
-        // $this->app->bind(
-        //     UserRepositoryInterface::class,
-        //     UserRepository::class
-        // );
+        $this->registerRepositoriesFrom('{{moduleName}}');
     }
 
     /**
