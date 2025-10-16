@@ -22,7 +22,7 @@ class {{class}} extends ApiController
      */
     public function index()
     {
-        return $this->service->listAll();
+        return $this->success($this->service->listAll(), 'List Data');
     }
 
     /**
@@ -30,7 +30,8 @@ class {{class}} extends ApiController
      */
     public function store({{storeRequestCustom}} $request)
     {
-        return $this->service->store($request->validated());
+        $dataValidated = $request->validated();
+        return $this->success($this->service->store($dataValidated), 'Data created');
     }
 
     /**
@@ -38,7 +39,7 @@ class {{class}} extends ApiController
      */
     public function find($id)
     {
-        return $this->service->find($id);
+        return $this->success($this->service->find($id), 'Data found');
     }
 
     /**
@@ -46,6 +47,7 @@ class {{class}} extends ApiController
      */
     public function update({{updateRequestCustom}} $request, $id)
     {
+        $dataValidated = $request->validated();
         return $this->service->update($id, $request->validated());
     }
 
@@ -54,6 +56,6 @@ class {{class}} extends ApiController
      */
     public function destroy($id)
     {
-        return $this->service->delete($id);
+        return $this->success($this->service->delete($id), 'Data deleted');
     }
 }
