@@ -188,6 +188,9 @@ class MakeRepositoryServiceCommand extends Command
 
         $repository = $this->option('repository') ?? "{$name}Repository/{$name}Repository";
         $this->generateRepository($repository, $table);
+        if ($table) {
+            $this->addApiRoutes($table, $name);
+        }
 
         $this->info("API Module {$name} created successfully.");
     }
@@ -611,5 +614,92 @@ class MakeRepositoryServiceCommand extends Command
 
         file_put_contents($filePath, $content);
         $this->info("$what created.");
+    }
+
+    protected function addApiRoutes($table, $moduleName)
+    {
+        $modelName = Str::studly(Str::singular($table));
+        $routePrefix = Str::kebab(Str::plural($table));
+        $moduleNameLower = strtolower($moduleName);
+        $controllerPath = "App\\Modules\\{$moduleName}\\Http\\Controllers\\Api\\{$modelName}Controller";
+
+        $moduleBase = $this->moduleBasePath($moduleName);
+        $apiRoutePath = "{$moduleBase}/Routes/api.php";
+
+        if (!file_exists($apiRoutePath)) {
+            $this->warn("File {$apiRoutePath} tidak ditemukan.");
+            return;
+        }
+
+        $routeContent = file_get_contents($apiRoutePath);
+
+        if (strpos($routeContent, "prefix('{$routePrefix}')") !== false) {
+            $this->warn("Route untuk prefix '{$routePrefix}' sudah ada.");
+            return;
+        }
+
+        $routeBlock = $this->generateRouteBlock($modelName, $routePrefix, $controllerPath);
+
+        $prefixPattern = "/prefix\('{$moduleNameLower}'\)->name\('{$moduleNameLower}\.'\)->group\(function\s*\(\)\s*\{/";
+
+        if (preg_match($prefixPattern, $routeContent)) {
+            $updatedContent = $this->insertRouteIntoGroup($routeContent, $routeBlock, $moduleNameLower);
+            
+            if (file_put_contents($apiRoutePath, $updatedContent)) {
+                $this->info("✓ Route untuk '{$routePrefix}' berhasil ditambahkan ke {$apiRoutePath}");
+            } else {
+                $this->error("Gagal menyimpan route ke {$apiRoutePath}");
+            }
+        } else {
+            $this->warn("Tidak dapat menemukan prefix group untuk '{$moduleNameLower}' di {$apiRoutePath}");
+        }
+    }
+
+    protected function generateRouteBlock($modelName, $routePrefix, $controllerPath)
+    {
+        $routeName = Str::kebab($modelName);
+        
+        $block = "\n// {$modelName} Routes\n"
+            . "Route::prefix('{$routePrefix}')->group(function () {\n"
+            . "    Route::get('/', [{$controllerPath}::class, 'index'])->name('index');\n"
+            . "    Route::get('/{id}', [{$controllerPath}::class, 'find'])->name('show');\n"
+            . "    Route::post('/', [{$controllerPath}::class, 'store'])->name('store');\n"
+            . "    Route::put('/{id}', [{$controllerPath}::class, 'update'])->name('update');\n"
+            . "    Route::delete('/{id}', [{$controllerPath}::class, 'destroy'])->name('destroy');\n"
+            . "});\n";
+
+        return $block;
+    }
+
+    protected function insertRouteIntoGroup($routeContent, $routeBlock, $moduleNameLower)
+    {
+        $lines = explode("\n", $routeContent);
+        $insertPosition = -1;
+        $braceCount = 0;
+        $inMainGroup = false;
+
+        for ($i = count($lines) - 1; $i >= 0; $i--) {
+            $line = trim($lines[$i]);
+
+            if (empty($line) || strpos($line, '//') === 0) {
+                continue;
+            }
+
+            if ($line === '});') {
+                $braceCount++;
+                if ($braceCount === 1) {
+                    $insertPosition = $i;
+                    break;
+                }
+            }
+        }
+
+        if ($insertPosition === -1) {
+            return $routeContent;
+        }
+
+        array_splice($lines, $insertPosition, 0, explode("\n", $routeBlock));
+
+        return implode("\n", $lines);
     }
 }
