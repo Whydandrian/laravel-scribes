@@ -189,10 +189,6 @@ class MakeRepositoryServiceCommand extends Command
         $repository = $this->option('repository') ?? "{$name}Repository/{$name}Repository";
         $this->generateRepository($repository, $table);
 
-        if ($table) {
-            $this->addSwaggerSchemaToExistingModel($table, $name);
-        }
-
         $this->info("API Module {$name} created successfully.");
     }
 
