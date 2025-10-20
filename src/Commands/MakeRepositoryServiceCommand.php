@@ -4,6 +4,8 @@ namespace Wahyudi\RepoServiceGenerator\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class MakeRepositoryServiceCommand extends Command
 {
@@ -187,6 +189,10 @@ class MakeRepositoryServiceCommand extends Command
         $repository = $this->option('repository') ?? "{$name}Repository/{$name}Repository";
         $this->generateRepository($repository, $table);
 
+        if ($table) {
+            $this->addSwaggerSchemaToExistingModel($table, $name);
+        }
+
         $this->info("API Module {$name} created successfully.");
     }
 
@@ -219,6 +225,14 @@ class MakeRepositoryServiceCommand extends Command
         $customStoreRequest = "Store{$modelName}Request";
         $customUpdateRequest = "Update{$modelName}Request";
 
+        $modelNamePlural = Str::plural(Str::kebab($modelName));
+        $moduleNameLower = strtolower($moduleName);
+        $requestBodyProperties = '';
+        if ($isApi && $table) {
+            $columns = $this->getTableColumns($table);
+            $requestBodyProperties = $this->generateSwaggerRequestProperties($columns);
+        }
+
 
         $content = str_replace(
             [
@@ -231,7 +245,10 @@ class MakeRepositoryServiceCommand extends Command
                 '{{updateRequestCustom}}',
                 '{{serviceNamespace}}',
                 '{{modelName}}',
+                '{{modelNamePlural}}',
                 '{{moduleName}}',
+                '{{moduleNameLower}}',
+                '{{requestBodyProperties}}',
             ],
             [
                 $controllerNamespace,
@@ -243,13 +260,99 @@ class MakeRepositoryServiceCommand extends Command
                 "{$customUpdateRequest}",
                 $serviceNamespace,
                 $modelName,
+                $modelNamePlural,
                 $moduleName,
+                $moduleNameLower,
+                $requestBodyProperties,
             ],
             $stub
         );
 
         $filePath = "{$controllerBasePath}/{$controllerName}.php";
         $this->putFileIfNotExists($filePath, $content, "Controller {$controllerNamespace}\\{$controllerName}");
+    }
+
+    protected function getTableColumns($table)
+    {
+        if (!Schema::hasTable($table)) {
+            return [];
+        }
+        return Schema::getColumns($table);
+    }
+    protected function generateSwaggerRequestProperties($columns)
+    {
+        $properties = '';
+        $required = [];
+        foreach ($columns as $column) {
+            if (in_array($column['name'], ['id', 'created_at', 'updated_at', 'deleted_at'])) {
+                continue;
+            }
+            if (!$column['nullable']) {
+                $required[] = "\"{$column['name']}\"";
+            }
+            $type = $this->mapColumnTypeToSwagger($column['type']);
+            $example = $this->generateExampleValue($column['name'], $type);
+            $properties .= "       *         @OA\Property(\n";
+            $properties .= "       *           property=\"{$column['name']}\",\n";
+            $properties .= "       *           type=\"{$type}\",\n";
+            $properties .= "       *           example=\"{$example}\"\n";
+            $properties .= "       *         ),\n";
+        }
+        $requiredStr = implode(', ', $required);
+        $result = '';
+        if ($requiredStr) {
+            $result .= "required={" . $requiredStr . "},\n       ";
+        }
+        $result .= rtrim($properties, ",\n");
+        return $result;
+    }
+    protected function mapColumnTypeToSwagger($type)
+    {
+        $type = strtolower($type);
+        if (str_contains($type, 'int')) {
+            return 'integer';
+        }
+        if (str_contains($type, 'bool')) {
+            return 'boolean';
+        }
+        if (str_contains($type, 'float') || str_contains($type, 'double') || str_contains($type, 'decimal')) {
+            return 'number';
+        }
+        if (str_contains($type, 'date') || str_contains($type, 'time')) {
+            return 'string';
+        }
+        if (str_contains($type, 'json')) {
+            return 'object';
+        }
+        return 'string';
+    }
+    protected function generateExampleValue($columnName, $type)
+    {
+        if (str_contains($columnName, 'email')) {
+            return 'user@example.com';
+        }
+        if (str_contains($columnName, 'name')) {
+            return 'example name';
+        }
+        if (str_contains($columnName, 'title')) {
+            return 'example title';
+        }
+        if (str_contains($columnName, 'description')) {
+            return 'example description';
+        }
+        if (str_contains($columnName, 'status')) {
+            return 'active';
+        }
+        if ($type === 'integer') {
+            return '1';
+        }
+        if ($type === 'boolean') {
+            return 'true';
+        }
+        if ($type === 'number') {
+            return '0.00';
+        }
+        return 'example value';
     }
 
     protected function generateRequest($requestOption, $table = null)
@@ -364,6 +467,17 @@ class MakeRepositoryServiceCommand extends Command
 
         $filePath = "{$basePath}/{$className}.php";
         $this->putFileIfNotExists($filePath, $content, "Repository {$namespace}\\{$className}");
+    }
+
+    protected function generateFillableArray($columns)
+    {
+        $fillable = [];
+        foreach ($columns as $column) {
+            if (!in_array($column['name'], ['id', 'created_at', 'updated_at', 'deleted_at'])) {
+                $fillable[] = "'{$column['name']}'";
+            }
+        }
+        return "[\n        " . implode(",\n        ", $fillable) . ",\n    ]";
     }
 
     protected function generateServiceProvider($name)
