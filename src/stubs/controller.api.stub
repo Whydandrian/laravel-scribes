@@ -24,10 +24,10 @@ class {{class}} extends ApiController
      * @OA\Get(
      *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}",
      *   tags={"{{moduleName}}/{{modelName}}"},
-     *   summary="List all {{modelNamePlural}}",
+     *   summary="List all {{modelName}}",
      *   @OA\Response(
      *     response=200,
-     *     description="List of {{modelNamePlural}}",
+     *     description="List of {{modelName}}",
      *     @OA\JsonContent(ref="#/components/schemas/{{modelName}}ListResponse")
      *   )
      * )
@@ -44,7 +44,7 @@ class {{class}} extends ApiController
      * @OA\Post(
      *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}",
      *   tags={"{{moduleName}}/{{modelName}}"},
-     *   summary="Create a new {{modelNameLower}}",
+     *   summary="Create a new {{modelName}}",
      *   @OA\RequestBody(
      *     required=true,
      *     @OA\JsonContent(
@@ -74,7 +74,7 @@ class {{class}} extends ApiController
      * @OA\Get(
      *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
      *   tags={"{{moduleName}}/{{modelName}}"},
-     *   summary="Get {{modelNameLower}} detail by ID",
+     *   summary="Get {{modelName}} detail by ID",
      *   @OA\Parameter(
      *     name="id",
      *     in="path",
@@ -107,7 +107,7 @@ class {{class}} extends ApiController
      * @OA\Put(
      *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
      *   tags={"{{moduleName}}/{{modelName}}"},
-     *   summary="Update an existing {{modelNameLower}}",
+     *   summary="Update an existing {{modelName}}",
      *   @OA\Parameter(
      *     name="id",
      *     in="path",
@@ -144,7 +144,7 @@ class {{class}} extends ApiController
      * @OA\Delete(
      *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
      *   tags={"{{moduleName}}/{{modelName}}"},
-     *   summary="Delete a {{modelNameLower}} by ID",
+     *   summary="Delete a {{modelName}} by ID",
      *   @OA\Parameter(
      *     name="id",
      *     in="path",
