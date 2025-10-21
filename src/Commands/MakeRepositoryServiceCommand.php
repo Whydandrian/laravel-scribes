@@ -619,7 +619,7 @@ class MakeRepositoryServiceCommand extends Command
     protected function addApiRoutes($table, $moduleName)
     {
         $modelName = Str::studly(Str::singular($table));
-        $routePrefix = Str::kebab(Str::plural($table));
+        $routePrefix = Str::kebab(Str::plural(str_replace('_', '-', $table)));
         $moduleNameLower = strtolower($moduleName);
         $controllerPath = "App\\Modules\\{$moduleName}\\Http\\Controllers\\Api\\{$modelName}Controller";
 
