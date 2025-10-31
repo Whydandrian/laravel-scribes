@@ -28,28 +28,19 @@ composer require whydsee/laravel-scribes
     use FileUploadTrait;
     ```
 
-2. Generate repository & service
+2. Generate api full module
 
     ```bash
-    php artisan make:scribes {table_name}
+    php artisan scribes:generate-module --name={ModuleName} --table={table_names} --api
     ```
-    Ganti `{table_name}` dengan nama table yang ingin di generate.
-    Repository & service akan di generate di folder `app/Repositories` dan `app/Services`.
-    - Repository akan di generate di folder `app/Repositories/{table_name}Repository.php`
-    - Service akan di generate di folder `app/Services/{table_name}Service.php`
-    - Pada repository, akan di generate method CRUD.
-    - Pada service, akan di generate method CRUD.
-    - Pada controller, akan di generate method CRUD.
-
-    Jika ingin generate controller, request, repository & service sekaligus, tambahkan flag `--all`.
-    ```bash
-    php artisan scribes:make-module --name=Perkuliahan --table={table_name} --all
-    ```
+    Ganti `{table_names}` dengan nama table yang ingin di generate.
+    Ganti `{ModuleName}` dengan nama module yang akan dibuat. Contoh: Academic, Report, etc.
+    Otomatis akan membuat direktori module, contoh : Academic, dan didalamnya ada folder controller, services, repositories, route, config, model & presenters.
 
     Jika ingin generate controller, request, repository & service satu-satu gunakan command:
 
     ```bash
-    php artisan scribes:make-module --name=Perkuliahan --table={table_name} --controller --request --repository --service
+    php artisan scribes:make-module --name=Perkuliahan --table={table_name} --controller or --request or --repository or --service
     ```
     tag --controller --request --repository --service bersifat opsional, bisa pilih salah satu.
 
