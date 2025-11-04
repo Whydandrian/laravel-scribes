@@ -15,7 +15,7 @@ class {{class}}
 
     public function list()
     {
-        return $this->repository->all();
+        return $this->repository->list();
     }
 
     public function find(int $id)
@@ -25,7 +25,7 @@ class {{class}}
 
     public function store(array $data)
     {
-        return $this->repository->create($data);
+        return $this->repository->store($data);
     }
 
     public function update(int $id, array $data)

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 class MakeRepositoryServiceCommand extends Command
 {
-    protected $signature = 'scribes:generate-module
+    protected $signature = 'scribes:make
         {--name= : Nama module yang akan dibuat (kosongkan jika tidak ingin menggunakan module)}
         {--table= : Nama tabel (comma-separated)}
         {--controller= : Nama controller custom (opsional)}
@@ -503,9 +503,9 @@ class MakeRepositoryServiceCommand extends Command
         $moduleName = $this->option('name');
         $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
 
-        if ($table && $modelName) {
-            $this->generateInterface("{$modelName}Repository/{$modelName}Interface", $table);
-        }
+        // if ($table && $modelName) {
+        //     $this->generateInterface("{$modelName}Repository/{$modelName}Interface", $table);
+        // }
 
         if ($table) {
             $repositoryOption = "{$modelName}Repository/{$modelName}Repository";
@@ -708,10 +708,9 @@ class MakeRepositoryServiceCommand extends Command
         $modelName = Str::studly(Str::singular($table));
         $routePrefix = Str::kebab(Str::plural(str_replace('_', '-', $table)));
         $moduleNameLower = strtolower($moduleName);
-        $controllerPath = "App\\Modules\\{$moduleName}\\Http\\Controllers\\Api\\{$modelName}Controller";
+        $controllerPath = "App\\Http\\Controllers\\Api\\{$modelName}Controller";
 
-        $moduleBase = $this->moduleBasePath($moduleName);
-        $apiRoutePath = "{$moduleBase}/Routes/api.php";
+        $apiRoutePath = "routes/api.php";
 
         if (!file_exists($apiRoutePath)) {
             $this->warn("File {$apiRoutePath} tidak ditemukan.");

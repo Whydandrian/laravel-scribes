@@ -4,33 +4,45 @@ namespace {{namespace}};
 
 use App\Repositories\BaseRepository;
 use App\Models\{{modelName}};
+use App\Repositories\BaseRepository;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class {{class}} extends BaseRepository
 {
-    public function all()
+    public function list(array $params = []): Collection
     {
-        return {{modelName}}::all();
+        $rolesData = $this->getData($params)->get();
+        return $rolesData;
     }
 
-    public function find(int $id): ?{{modelName}}
+    public function find(int $id): array
     {
-        return {{modelName}}::find($id);
+        $data = {{modelName}}::findOrFail($id);
+        return $data->toArray();
     }
 
-    public function create(array $data): {{modelName}}
+    public function store(array $params): {{modelName}}
     {
-        return {{modelName}}::create($data);
+        return {{modelName}}::create($params);
     }
 
-    public function update(int $id, array $data): bool
+    public function update({{modelName}} $dataModel, array $params): {{modelName}}
     {
-        $item = $this->find($id);
-        return $item ? $item->update($data) : false;
+        $dataModel->update($params);
+        return $dataModel;
     }
 
-    public function delete(int $id): bool
+    public function delete({{modelName}} $dataDelete): bool
     {
-        $item = $this->find($id);
-        return $item ? $item->delete() : false;
+        $item = $dataDelete->->delete();
+        return $item;
+    }
+
+    private function getData(array $params = []): Builder
+    {
+        ${{modelName}}Data = {{modelName}}::filter($params);
+
+        return ${{modelName}}Data;
     }
 }
