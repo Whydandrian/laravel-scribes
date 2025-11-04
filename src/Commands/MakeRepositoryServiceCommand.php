@@ -464,7 +464,7 @@ class MakeRepositoryServiceCommand extends Command
             $baseNamespace = "App\\Modules\\{$moduleName}\\Services";
         } else {
             $baseDir = app_path('Http/Services');
-            $baseNamespace = "App\\Http\\Services";
+            $baseNamespace = "App\\Services";
         }
 
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
@@ -515,7 +515,7 @@ class MakeRepositoryServiceCommand extends Command
             $baseNamespace = "App\\Modules\\{$moduleName}\\Repositories";
         } else {
             $baseDir = app_path('Http/Repositories');
-            $baseNamespace = "App\\Http\\Repositories";
+            $baseNamespace = "App\\Repositories";
         }
 
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(

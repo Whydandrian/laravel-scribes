@@ -2,10 +2,10 @@
 
 namespace {{namespace}};
 
+use App\Repositories\BaseRepository;
 use App\Models\{{modelName}};
-use App\Modules\{{moduleName}}\Repositories\{{modelName}}Repository\{{modelName}}Interface;
 
-class {{class}} implements {{modelName}}Interface
+class {{class}} extends BaseRepository
 {
     public function all()
     {

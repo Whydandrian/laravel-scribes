@@ -22,8 +22,8 @@ class {{class}} extends BaseApiController
      */
     /**
      * @OA\Get(
-     *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}",
-     *   tags={"{{moduleName}}/{{modelName}}"},
+     *   path="/api/{{modelNamePlural}}",
+     *   tags={"{{modelName}}"},
      *   summary="List all {{modelName}}",
      *   @OA\Response(
      *     response=200,
@@ -42,8 +42,8 @@ class {{class}} extends BaseApiController
      */
     /**
      * @OA\Post(
-     *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}",
-     *   tags={"{{moduleName}}/{{modelName}}"},
+     *   path="/api/{{modelNamePlural}}",
+     *   tags={"{{modelName}}"},
      *   summary="Create a new {{modelName}}",
      *   @OA\RequestBody(
      *     required=true,
@@ -72,8 +72,8 @@ class {{class}} extends BaseApiController
      */
     /**
      * @OA\Get(
-     *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
-     *   tags={"{{moduleName}}/{{modelName}}"},
+     *   path="/api/{{modelNamePlural}}/{id}",
+     *   tags={"{{modelName}}"},
      *   summary="Get {{modelName}} detail by ID",
      *   @OA\Parameter(
      *     name="id",
@@ -105,8 +105,8 @@ class {{class}} extends BaseApiController
      */
     /**
      * @OA\Put(
-     *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
-     *   tags={"{{moduleName}}/{{modelName}}"},
+     *   path="/api/{{modelNamePlural}}/{id}",
+     *   tags={"{{modelName}}"},
      *   summary="Update an existing {{modelName}}",
      *   @OA\Parameter(
      *     name="id",
@@ -142,8 +142,8 @@ class {{class}} extends BaseApiController
      */
     /**
      * @OA\Delete(
-     *   path="/api/{{moduleNameLower}}/{{modelNamePlural}}/{id}",
-     *   tags={"{{moduleName}}/{{modelName}}"},
+     *   path="/api/{{modelNamePlural}}/{id}",
+     *   tags={"{{modelName}}"},
      *   summary="Delete a {{modelName}} by ID",
      *   @OA\Parameter(
      *     name="id",

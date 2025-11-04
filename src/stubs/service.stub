@@ -2,18 +2,18 @@
 
 namespace {{namespace}};
 
-use App\Modules\{{moduleName}}\Repositories\{{modelName}}Repository\{{modelName}}Interface;
+use App\Repositories\{{modelName}}Repository\{{modelName}}Repository;
 
 class {{class}}
 {
-    private {{modelName}}Interface $repository;
+    private {{modelName}}Repository $repository;
 
-    public function __construct({{modelName}}Interface $repository)
+    public function __construct({{modelName}}Repository $repository)
     {
         $this->repository = $repository;
     }
 
-    public function listAll()
+    public function list()
     {
         return $this->repository->all();
     }
