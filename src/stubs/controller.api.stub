@@ -2,13 +2,13 @@
 
 namespace {{namespace}};
 
-use App\Http\Controllers\ApiController;
+use App\Http\Controllers\BaseApiController;
 use Illuminate\Http\Request;
 {{storeRequest}}
 {{updateRequest}}
 use {{serviceNamespace}};
 
-class {{class}} extends ApiController
+class {{class}} extends BaseApiController
 {
     protected $service;
 

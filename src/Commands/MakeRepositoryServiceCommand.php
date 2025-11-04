@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Schema;
 
 class MakeRepositoryServiceCommand extends Command
 {
-    protected $signature = 'scribes:generate-module
-        {--name= : Nama module yang akan dibuat}
+    protected $signature = 'scribes:make
+        {--name= : Nama module yang akan dibuat (kosongkan jika tidak ingin menggunakan module)}
         {--table= : Nama tabel (comma-separated)}
         {--controller= : Nama controller custom (opsional)}
         {--service= : Nama service custom (opsional)}
@@ -18,14 +18,24 @@ class MakeRepositoryServiceCommand extends Command
         {--all : Generate semua file lengkap}
         {--api : Generate API controller lengkap}';
 
-    protected $description = 'Generate module files (controller, request, service, repository, config, routes, provider, etc)';
+    protected $description = 'Generate module files atau standalone API files (controller, request, service, repository)';
+
+    protected $isModular = false;
 
     public function handle()
     {
         $name = $this->option('name');
         $table = $this->option('table');
 
-        $this->generateModuleStructure($name);
+        // Cek apakah menggunakan module atau standalone
+        $this->isModular = !empty($name);
+
+        if ($this->isModular) {
+            $this->info("Generating with Module structure: {$name}");
+            $this->generateModuleStructure($name);
+        } else {
+            $this->info("Generating standalone API structure (without module)");
+        }
 
         if ($this->option('api')) {
             $this->generateApiModule();
@@ -55,7 +65,10 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function moduleBasePath($name)
     {
-        return app_path("Modules/{$name}");
+        if ($this->isModular) {
+            return app_path("Modules/{$name}");
+        }
+        return app_path();
     }
 
     protected function generateModuleStructure($name)
@@ -157,19 +170,24 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function generateFullModule($name, $table = null)
     {
-        $controller = $this->option('controller') ?? "{$name}Controller";
+        $controller = $this->option('controller') ?? ($table ? Str::studly(Str::singular($table)) . "Controller" : "{$name}Controller");
         $this->generateController($controller, $table);
 
-        $this->generateRequest("{$name}Request/Store{$name}Request", $table);
-        $this->generateRequest("{$name}Request/Update{$name}Request", $table);
+        $modelName = $table ? Str::studly(Str::singular($table)) : $name;
+        $this->generateRequest("{$modelName}Request/Store{$modelName}Request", $table);
+        $this->generateRequest("{$modelName}Request/Update{$modelName}Request", $table);
 
-        $service = $this->option('service') ?? "{$name}Service/{$name}Service";
+        $service = $this->option('service') ?? "{$modelName}Service/{$modelName}Service";
         $this->generateService($service, $table);
 
-        $repository = $this->option('repository') ?? "{$name}Repository/{$name}Repository";
+        $repository = $this->option('repository') ?? "{$modelName}Repository/{$modelName}Repository";
         $this->generateRepository($repository, $table);
 
-        $this->info("Module {$name} created successfully.");
+        if ($this->isModular) {
+            $this->info("Module {$name} created successfully.");
+        } else {
+            $this->info("Standalone API files created successfully.");
+        }
     }
 
     protected function generateApiModule()
@@ -177,61 +195,94 @@ class MakeRepositoryServiceCommand extends Command
         $name = $this->option('name');
         $table = $this->option('table');
 
-        $controller = $this->option('controller') ?? "Api/{$name}Controller";
+        if (!$table) {
+            $this->error("--table option is required for API generation");
+            return;
+        }
+
+        $modelName = Str::studly(Str::singular($table));
+
+        if ($this->isModular) {
+            $controller = $this->option('controller') ?? "Api/{$modelName}Controller";
+        } else {
+            $controller = $this->option('controller') ?? "Api/{$modelName}Controller";
+        }
+
         $this->generateController($controller, $table, true);
 
-        $this->generateRequest("{$name}Request/Store{$name}Request", $table);
-        $this->generateRequest("{$name}Request/Update{$name}Request", $table);
+        $this->generateRequest("{$modelName}Request/Store{$modelName}Request", $table);
+        $this->generateRequest("{$modelName}Request/Update{$modelName}Request", $table);
 
-        $service = $this->option('service') ?? "{$name}Service/{$name}Service";
+        $service = $this->option('service') ?? "{$modelName}Service/{$modelName}Service";
         $this->generateService($service, $table);
 
-        $repository = $this->option('repository') ?? "{$name}Repository/{$name}Repository";
+        $repository = $this->option('repository') ?? "{$modelName}Repository/{$modelName}Repository";
         $this->generateRepository($repository, $table);
-        if ($table) {
+
+        if ($this->isModular && $table) {
             $this->addApiRoutes($table, $name);
         }
 
-        $this->info("API Module {$name} created successfully.");
+        if ($this->isModular) {
+            $this->info("API Module {$name} created successfully.");
+        } else {
+            $this->info("Standalone API files created successfully.");
+        }
     }
 
     protected function generateController($controllerOption, $table = null, $isApi = false)
     {
         $moduleName = $this->option('name');
-        $moduleBase = $this->moduleBasePath($moduleName);
-        $moduleNamespace = "App\\Modules\\{$moduleName}";
-
-        $modelName = $table ? Str::studly(Str::singular($table)) : $moduleName;
+        $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
         $controllerName = "{$modelName}Controller";
 
-        $controllerBasePath = $isApi
-            ? "{$moduleBase}/Http/Controllers/Api"
-            : "{$moduleBase}/Http/Controllers";
+        if ($this->isModular) {
+            // Module structure
+            $moduleBase = $this->moduleBasePath($moduleName);
+            $moduleNamespace = "App\\Modules\\{$moduleName}";
 
-        $controllerNamespace = $isApi
-            ? "{$moduleNamespace}\\Http\\Controllers\\Api"
-            : "{$moduleNamespace}\\Http\\Controllers";
+            $controllerBasePath = $isApi
+                ? "{$moduleBase}/Http/Controllers/Api"
+                : "{$moduleBase}/Http/Controllers";
 
-        if (!is_dir($controllerBasePath)) {
-            mkdir($controllerBasePath, 0755, true);
+            $controllerNamespace = $isApi
+                ? "{$moduleNamespace}\\Http\\Controllers\\Api"
+                : "{$moduleNamespace}\\Http\\Controllers";
+
+            if (!is_dir($controllerBasePath)) {
+                mkdir($controllerBasePath, 0755, true);
+            }
+
+            $storeRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Store{$modelName}Request";
+            $updateRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Update{$modelName}Request";
+            $serviceNamespace = "{$moduleNamespace}\\Services\\{$modelName}Service\\{$modelName}Service";
+            $moduleNameLower = strtolower($moduleName);
+        } else {
+            // Standalone structure
+            $controllerBasePath = app_path('Http/Controllers/Api');
+            $controllerNamespace = "App\\Http\\Controllers\\Api";
+
+            if (!is_dir($controllerBasePath)) {
+                mkdir($controllerBasePath, 0755, true);
+            }
+
+            $storeRequest = "App\\Http\\Requests\\{$modelName}Request\\Store{$modelName}Request";
+            $updateRequest = "App\\Http\\Requests\\{$modelName}Request\\Update{$modelName}Request";
+            $serviceNamespace = "App\\Http\\Services\\{$modelName}Service\\{$modelName}Service";
+            $moduleNameLower = strtolower($modelName);
         }
 
         $stub = $isApi ? $this->getStub('controller.api') : $this->getStub('controller');
 
-        $storeRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Store{$modelName}Request";
-        $updateRequest = "{$moduleNamespace}\\Http\\Requests\\{$modelName}Request\\Update{$modelName}Request";
-        $serviceNamespace = "{$moduleNamespace}\\Services\\{$modelName}Service\\{$modelName}Service";
         $customStoreRequest = "Store{$modelName}Request";
         $customUpdateRequest = "Update{$modelName}Request";
 
         $modelNamePlural = Str::plural(Str::kebab($modelName));
-        $moduleNameLower = strtolower($moduleName);
         $requestBodyProperties = '';
         if ($isApi && $table) {
             $columns = $this->getTableColumns($table);
             $requestBodyProperties = $this->generateSwaggerRequestProperties($columns);
         }
-
 
         $content = str_replace(
             [
@@ -260,7 +311,7 @@ class MakeRepositoryServiceCommand extends Command
                 $serviceNamespace,
                 $modelName,
                 $modelNamePlural,
-                $moduleName,
+                $moduleName ?: $modelName,
                 $moduleNameLower,
                 $requestBodyProperties,
             ],
@@ -278,6 +329,7 @@ class MakeRepositoryServiceCommand extends Command
         }
         return Schema::getColumns($table);
     }
+
     protected function generateSwaggerRequestProperties($columns)
     {
         $properties = '';
@@ -305,6 +357,7 @@ class MakeRepositoryServiceCommand extends Command
         $result .= rtrim($properties, ",\n");
         return $result;
     }
+
     protected function mapColumnTypeToSwagger($type)
     {
         $type = strtolower($type);
@@ -325,6 +378,7 @@ class MakeRepositoryServiceCommand extends Command
         }
         return 'string';
     }
+
     protected function generateExampleValue($columnName, $type)
     {
         if (str_contains($columnName, 'email')) {
@@ -356,8 +410,8 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function generateRequest($requestOption, $table = null)
     {
-        $moduleBase = $this->moduleBasePath($this->option('name'));
-        $modelName = $table ? Str::studly(Str::singular($table)) : null;
+        $moduleName = $this->option('name');
+        $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
 
         if ($table) {
             if (Str::contains($requestOption, 'Store')) {
@@ -367,10 +421,19 @@ class MakeRepositoryServiceCommand extends Command
             }
         }
 
+        if ($this->isModular) {
+            $moduleBase = $this->moduleBasePath($moduleName);
+            $baseDir = $moduleBase . '/Http/Requests';
+            $baseNamespace = "App\\Modules\\{$moduleName}\\Http\\Requests";
+        } else {
+            $baseDir = app_path('Http/Requests');
+            $baseNamespace = "App\\Http\\Requests";
+        }
+
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
             $requestOption,
-            $moduleBase.'/Http/Requests',
-            "App\\Modules\\{$this->option('name')}\\Http\\Requests"
+            $baseDir,
+            $baseNamespace
         );
 
         $stub = $this->getStub('request');
@@ -386,31 +449,39 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function generateService($serviceOption, $table = null)
     {
-        $moduleBase = $this->moduleBasePath($this->option('name'));
-        $modelName = $table ? Str::studly(Str::singular($table)) : null;
+        $moduleName = $this->option('name');
+        $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
 
         if ($table) {
             $serviceOption = "{$modelName}Service/{$modelName}Service";
         } else {
-            $serviceOption = $serviceOption ?: "{$this->option('name')}Service/{$this->option('name')}Service";
+            $serviceOption = $serviceOption ?: "{$modelName}Service/{$modelName}Service";
+        }
+
+        if ($this->isModular) {
+            $moduleBase = $this->moduleBasePath($moduleName);
+            $baseDir = $moduleBase . '/Services';
+            $baseNamespace = "App\\Modules\\{$moduleName}\\Services";
+        } else {
+            $baseDir = app_path('Http/Services');
+            $baseNamespace = "App\\Http\\Services";
         }
 
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
             $serviceOption,
-            $moduleBase.'/Services',
-            'App\\Modules\\'.$this->option('name').'\\Services'
+            $baseDir,
+            $baseNamespace
         );
-
-        $moduleName = $this->option('name');
 
         if ($table) {
             $stub = $this->getStub('service');
         } else {
             $stub = $this->getStub('service.empty');
         }
+
         $content = str_replace(
             ['{{namespace}}', '{{class}}', '{{table}}', '{{moduleName}}', '{{modelName}}'],
-            [$namespace, $className, $table, $moduleName, $modelName],
+            [$namespace, $className, $table, $moduleName ?: $modelName, $modelName],
             $stub
         );
 
@@ -420,14 +491,13 @@ class MakeRepositoryServiceCommand extends Command
             return;
         }
 
-        $filePath = "{$basePath}/{$className}.php";
         $this->putFileIfNotExists($filePath, $content, "Service {$namespace}\\{$className}");
     }
 
     protected function generateRepository($repositoryOption, $table = null)
     {
-        $moduleBase = $this->moduleBasePath($this->option('name'));
-        $modelName = $table ? Str::studly(Str::singular($table)) : null;
+        $moduleName = $this->option('name');
+        $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
 
         if ($table && $modelName) {
             $this->generateInterface("{$modelName}Repository/{$modelName}Interface", $table);
@@ -436,15 +506,23 @@ class MakeRepositoryServiceCommand extends Command
         if ($table) {
             $repositoryOption = "{$modelName}Repository/{$modelName}Repository";
         } else {
-            $repositoryOption = $repositoryOption ?: "{$this->option('name')}Repository/{$this->option('name')}Repository";
+            $repositoryOption = $repositoryOption ?: "{$modelName}Repository/{$modelName}Repository";
+        }
+
+        if ($this->isModular) {
+            $moduleBase = $this->moduleBasePath($moduleName);
+            $baseDir = $moduleBase . '/Repositories';
+            $baseNamespace = "App\\Modules\\{$moduleName}\\Repositories";
+        } else {
+            $baseDir = app_path('Http/Repositories');
+            $baseNamespace = "App\\Http\\Repositories";
         }
 
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
             $repositoryOption,
-            $moduleBase.'/Repositories',
-            'App\\Modules\\'.$this->option('name').'\\Repositories'
+            $baseDir,
+            $baseNamespace
         );
-
 
         if ($table) {
             $stub = $this->getStub('repository');
@@ -454,7 +532,7 @@ class MakeRepositoryServiceCommand extends Command
 
         $content = str_replace(
             ['{{namespace}}', '{{class}}', '{{table}}', '{{modelName}}', '{{moduleName}}'],
-            [$namespace, $className, $table, $modelName, $this->option('name')],
+            [$namespace, $className, $table, $modelName, $moduleName ?: $modelName],
             $stub
         );
 
@@ -464,7 +542,6 @@ class MakeRepositoryServiceCommand extends Command
             return;
         }
 
-        $filePath = "{$basePath}/{$className}.php";
         $this->putFileIfNotExists($filePath, $content, "Repository {$namespace}\\{$className}");
     }
 
@@ -496,15 +573,24 @@ class MakeRepositoryServiceCommand extends Command
 
     protected function generateInterface($interfaceOption, $table = null)
     {
-        $moduleBase = $this->moduleBasePath($this->option('name'));
-        $modelName = $table ? Str::studly(Str::singular($table)) : null;
+        $moduleName = $this->option('name');
+        $modelName = $table ? Str::studly(Str::singular($table)) : ($moduleName ?: 'Example');
 
         $interfaceOption = "{$modelName}Repository/{$modelName}Interface";
 
+        if ($this->isModular) {
+            $moduleBase = $this->moduleBasePath($moduleName);
+            $baseDir = $moduleBase . '/Repositories';
+            $baseNamespace = "App\\Modules\\{$moduleName}\\Repositories";
+        } else {
+            $baseDir = app_path('Http/Repositories');
+            $baseNamespace = "App\\Http\\Repositories";
+        }
+
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
             $interfaceOption,
-            $moduleBase.'/Repositories',
-            'App\\Modules\\'.$this->option('name').'\\Repositories'
+            $baseDir,
+            $baseNamespace
         );
 
         $stub = $this->getStub('interface');
@@ -518,7 +604,6 @@ class MakeRepositoryServiceCommand extends Command
         $filePath = "{$basePath}/{$className}.php";
         $this->putFileIfNotExists($filePath, $content, "Interface {$namespace}\\{$className}");
     }
-
 
     protected function resolvePathAndNamespace($option, $baseDir, $baseNamespace)
     {
@@ -537,8 +622,6 @@ class MakeRepositoryServiceCommand extends Command
 
         return [$fullDir, $namespace, $className];
     }
-
-
 
     protected function updateBootstrapApp($name)
     {
