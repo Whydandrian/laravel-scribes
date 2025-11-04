@@ -32,9 +32,9 @@ class {{class}} extends BaseApiController
      *   )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        return $this->success($this->service->listAll(), 'List Data');
+        return $this->sendSuccess($this->service->list($request->all()), 'List data');
     }
 
     /**
@@ -64,7 +64,7 @@ class {{class}} extends BaseApiController
         $dataValidated = $request->validated();
         $dataCreated = $this->service->store($dataValidated);
 
-        return $this->success($dataCreated, 'Data created');
+        return $this->sendSuccess($dataCreated, 'Data store successfully.');
     }
 
     /**
@@ -93,11 +93,8 @@ class {{class}} extends BaseApiController
     public function find($id)
     {
         $data = $this->service->find($id);
-        if (!$data) {
-            return $this->error('Data not found', 404);
-        }
 
-        return $this->success($data, 'Data found');
+        return $this->sendSuccess($data, 'Data found');
     }
 
     /**
@@ -134,7 +131,7 @@ class {{class}} extends BaseApiController
         $dataValidated = $request->validated();
         $dataUpdated = $this->service->update($id, $dataValidated);
 
-        return $this->service->find($id);
+        return $this->sendSuccess($dataUpdated, 'Data updated');
     }
 
     /**
@@ -168,6 +165,6 @@ class {{class}} extends BaseApiController
      */
     public function destroy($id)
     {
-        return $this->success($this->service->delete($id), 'Data deleted');
+        return $this->sendSuccess($this->service->delete($id), 'Data deleted');
     }
 }
