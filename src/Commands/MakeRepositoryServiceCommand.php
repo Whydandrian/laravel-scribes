@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 class MakeRepositoryServiceCommand extends Command
 {
-    protected $signature = 'scribes:make
+    protected $signature = 'scribes:generate-module
         {--name= : Nama module yang akan dibuat (kosongkan jika tidak ingin menggunakan module)}
         {--table= : Nama tabel (comma-separated)}
         {--controller= : Nama controller custom (opsional)}
@@ -266,9 +266,9 @@ class MakeRepositoryServiceCommand extends Command
                 mkdir($controllerBasePath, 0755, true);
             }
 
-            $storeRequest = "App\\Http\\Requests\\{$modelName}Request\\Store{$modelName}Request";
-            $updateRequest = "App\\Http\\Requests\\{$modelName}Request\\Update{$modelName}Request";
-            $serviceNamespace = "App\\Http\\Services\\{$modelName}Service\\{$modelName}Service";
+            $storeRequest = "App\\Http\\Requests\\{$modelName}\\Store{$modelName}Request";
+            $updateRequest = "App\\Http\\Requests\\{$modelName}\\Update{$modelName}Request";
+            $serviceNamespace = "App\\Services\\{$modelName}Service\\{$modelName}Service";
             $moduleNameLower = strtolower($modelName);
         }
 
@@ -415,9 +415,13 @@ class MakeRepositoryServiceCommand extends Command
 
         if ($table) {
             if (Str::contains($requestOption, 'Store')) {
-                $requestOption = "{$modelName}Request/Store{$modelName}Request";
+                $requestOption = $this->isModular 
+                    ? "{$modelName}Request/Store{$modelName}Request"
+                    : "{$modelName}/Store{$modelName}Request";
             } elseif (Str::contains($requestOption, 'Update')) {
-                $requestOption = "{$modelName}Request/Update{$modelName}Request";
+                $requestOption = $this->isModular 
+                    ? "{$modelName}Request/Update{$modelName}Request"
+                    : "{$modelName}/Update{$modelName}Request";
             }
         }
 
@@ -463,7 +467,7 @@ class MakeRepositoryServiceCommand extends Command
             $baseDir = $moduleBase . '/Services';
             $baseNamespace = "App\\Modules\\{$moduleName}\\Services";
         } else {
-            $baseDir = app_path('Http/Services');
+            $baseDir = app_path('Services');
             $baseNamespace = "App\\Services";
         }
 
@@ -514,7 +518,7 @@ class MakeRepositoryServiceCommand extends Command
             $baseDir = $moduleBase . '/Repositories';
             $baseNamespace = "App\\Modules\\{$moduleName}\\Repositories";
         } else {
-            $baseDir = app_path('Http/Repositories');
+            $baseDir = app_path('Repositories');
             $baseNamespace = "App\\Repositories";
         }
 
@@ -583,8 +587,8 @@ class MakeRepositoryServiceCommand extends Command
             $baseDir = $moduleBase . '/Repositories';
             $baseNamespace = "App\\Modules\\{$moduleName}\\Repositories";
         } else {
-            $baseDir = app_path('Http/Repositories');
-            $baseNamespace = "App\\Http\\Repositories";
+            $baseDir = app_path('Repositories');
+            $baseNamespace = "App\\Repositories";
         }
 
         [$basePath, $namespace, $className] = $this->resolvePathAndNamespace(
