@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 class MakeRepositoryServiceCommand extends Command
 {
-    protected $signature = 'scribes:generate-module
+    protected $signature = 'scribes:make
         {--name= : Nama module yang akan dibuat (kosongkan jika tidak ingin menggunakan module)}
         {--table= : Nama tabel (comma-separated)}
         {--controller= : Nama controller custom (opsional)}
