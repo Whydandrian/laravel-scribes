@@ -4,7 +4,6 @@ namespace {{namespace}};
 
 use App\Repositories\BaseRepository;
 use App\Models\{{modelName}};
-use App\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -35,7 +34,7 @@ class {{class}} extends BaseRepository
 
     public function delete({{modelName}} $dataDelete): bool
     {
-        $item = $dataDelete->->delete();
+        $item = $dataDelete->delete();
         return $item;
     }
 
